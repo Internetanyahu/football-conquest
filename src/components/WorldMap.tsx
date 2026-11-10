@@ -26,6 +26,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [stateFilter, setStateFilter] = useState<string>('ALL');
   const [mapZoom, setMapZoom] = useState(1);
+  const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ x: number; y: number; startX: number; startY: number } | null>(null);
+  const draggedRef = useRef(false);
+  const suppressClickRef = useRef(false);
   const [countyShapes, setCountyShapes] = useState<any[]>([]);
   const [countyShapeCount, setCountyShapeCount] = useState(0);
   const countyCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -146,6 +150,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   }, [gameState.counties, searchQuery, stateFilter]);
 
   const handleCountyClick = (county: County) => {
+    if (suppressClickRef.current) { suppressClickRef.current = false; return; }
     soundEngine.playClick();
     setSelectedCountyId(county.id);
   };
@@ -216,7 +221,27 @@ export const WorldMap: React.FC<WorldMapProps> = ({
         </div>
 
         {/* SVG Interactive Map */}
-        <div className="relative w-full aspect-[16/10] bg-stone-950 rounded border border-stone-800/80 overflow-hidden flex items-center justify-center">
+        <div
+          className="relative w-full aspect-[16/10] bg-stone-950 rounded border border-stone-800/80 overflow-hidden flex items-center justify-center touch-none"
+          onPointerDown={(event) => {
+            if ((event.target as HTMLElement).closest('button')) return;
+            dragRef.current = { x: event.clientX, y: event.clientY, startX: mapPan.x, startY: mapPan.y };
+            draggedRef.current = false;
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={(event) => {
+            if (!dragRef.current) return;
+            const dx = event.clientX - dragRef.current.x;
+            const dy = event.clientY - dragRef.current.y;
+            if (Math.abs(dx) + Math.abs(dy) > 4) draggedRef.current = true;
+            if (draggedRef.current) setMapPan({ x: dragRef.current.startX - dx * 2 / mapZoom, y: dragRef.current.startY - dy * 2 / mapZoom });
+          }}
+          onPointerUp={() => {
+            if (dragRef.current) suppressClickRef.current = draggedRef.current;
+            dragRef.current = null;
+          }}
+          onPointerCancel={() => { dragRef.current = null; }}
+        >
           <canvas
             ref={countyCanvasRef}
             aria-label="Pixelated United States county map"
@@ -239,7 +264,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             style={{ imageRendering: 'pixelated', cursor: 'crosshair' }}
           />
           <svg
-            viewBox="0 0 1000 660"
+            viewBox={(500 - 500 / mapZoom + mapPan.x) + " " + (330 - 330 / mapZoom + mapPan.y) + " " + (1000 / mapZoom) + " " + (660 / mapZoom)}
             className="relative z-10 w-full h-full select-none pointer-events-none"
             style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }}
           >
@@ -340,6 +365,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             <button onClick={() => zoomMap(-0.2)} className="w-7 h-7 rounded text-stone-200 hover:bg-stone-800" aria-label="Zoom out">−</button>
             <span className="min-w-12 text-center text-[10px] font-mono text-stone-300">{Math.round(mapZoom * 100)}%</span>
             <button onClick={() => zoomMap(0.2)} className="w-7 h-7 rounded text-stone-200 hover:bg-stone-800" aria-label="Zoom in">+</button>
+            <button onClick={() => { setMapZoom(1); setMapPan({ x: 0, y: 0 }); }} className="px-2 h-7 rounded text-[10px] text-stone-300 hover:bg-stone-800">Reset</button>
           </div>
 
           {/* Map Legend */}
