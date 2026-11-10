@@ -25,6 +25,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [stateFilter, setStateFilter] = useState<string>('ALL');
+  const [mapZoom, setMapZoom] = useState(1);
   const [countyShapes, setCountyShapes] = useState<any[]>([]);
   const [countyShapeCount, setCountyShapeCount] = useState(0);
   const countyCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -157,6 +158,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   };
 
   const isSelectedCountyChallengeable = selectedCounty && eligibleTargetIds.has(selectedCounty.id);
+  const zoomMap = (amount: number) => setMapZoom((current) => Math.min(2.5, Math.max(1, Number((current + amount).toFixed(2)))));
 
   return (
     <div className="w-full flex flex-col lg:flex-row gap-6 p-4 max-w-7xl mx-auto">
@@ -169,9 +171,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             <h2 className="text-sm font-bold font-display uppercase tracking-wider text-stone-100">
               North American Territorial Theatre
             </h2>
-            <span className="ml-2 rounded border border-amber-600/40 bg-amber-950/40 px-2 py-1 text-[10px] font-mono font-bold text-amber-300">
-              {Object.keys(gameState.counties).length} PLAYABLE TERRITORIES
-            </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -203,23 +202,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           </div>
         </div>
 
-        {/* Expansion summary */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded border border-stone-800 bg-stone-950 px-2 py-2">
-            <div className="font-mono text-lg font-bold text-amber-400">{Object.keys(gameState.counties).length}</div>
-            <div className="text-[9px] uppercase tracking-wider text-stone-500">Playable territories</div>
-          </div>
-          <div className="rounded border border-stone-800 bg-stone-950 px-2 py-2">
-            <div className="font-mono text-lg font-bold text-stone-200">62</div>
-            <div className="text-[9px] uppercase tracking-wider text-stone-500">Original regions</div>
-          </div>
-          <div className="rounded border border-stone-800 bg-stone-950 px-2 py-2">
-            <div className="font-mono text-lg font-bold text-emerald-400">3×</div>
-            <div className="text-[9px] uppercase tracking-wider text-stone-500">Territory detail</div>
-          </div>
-        </div>
-
-        {/* Status prompt */}
+        {/* Current frontier status */}
         <div className="flex items-center justify-between text-xs px-2 text-stone-400">
           <div>
             Coach Stationed at:{' '}
@@ -336,8 +319,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     opacity={isSelected ? 1 : 0.88}
                   />
 
-                  {/* County Name Label */}
-                  <text
+                  {/* Labels appear only when useful, avoiding a wall of overlapping text. */}
+                  {(mapZoom >= 1.3 || isSelected || isCoachHere || isEligibleTarget) && <text
                     y={16}
                     textAnchor="middle"
                     fill={isSelected ? '#f59e0b' : '#d6d3d1'}
@@ -347,14 +330,16 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     className="pointer-events-none drop-shadow"
                   >
                     {county.name.split(' ').slice(0, 2).join(' ')}
-                  </text>
+                  </text>}
                 </g>
               );
             })}
           </svg>
 
-          <div className="absolute top-3 right-3 z-20 bg-stone-950/85 border border-stone-800 px-2 py-1 rounded text-[10px] text-stone-300">
-            {countyShapeCount > 0 ? `${countyShapeCount.toLocaleString()} county outlines · pixelated detail` : 'Loading county boundaries…'}
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-1 bg-stone-950/90 border border-stone-800 p-1 rounded">
+            <button onClick={() => zoomMap(-0.2)} className="w-7 h-7 rounded text-stone-200 hover:bg-stone-800" aria-label="Zoom out">−</button>
+            <span className="min-w-12 text-center text-[10px] font-mono text-stone-300">{Math.round(mapZoom * 100)}%</span>
+            <button onClick={() => zoomMap(0.2)} className="w-7 h-7 rounded text-stone-200 hover:bg-stone-800" aria-label="Zoom in">+</button>
           </div>
 
           {/* Map Legend */}
