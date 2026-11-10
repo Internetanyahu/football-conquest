@@ -605,6 +605,11 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
     engineRef.current?.kickExtraPoint();
   };
 
+  const handleStartSecondHalf = () => {
+    engineRef.current?.startSecondHalf();
+    setIsPaused(false);
+  };
+
   const handleCompleteMatch = () => {
     const eng = engineRef.current;
     if (!eng) return;
@@ -732,6 +737,23 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
         <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-stone-950/85 backdrop-blur-sm border border-stone-700/60 px-4 py-1.5 rounded-md text-xs font-medium text-stone-200 shadow-md whitespace-nowrap pointer-events-none">
           {hudState.commentary}
         </div>
+
+        {hudState.phase === 'HALFTIME' && (
+          <div className="absolute inset-0 bg-stone-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 p-6 z-20">
+            <div className="text-amber-400 text-xs font-bold tracking-[0.3em] uppercase">End of first half</div>
+            <h2 className="text-4xl font-extrabold font-display tracking-tight text-white uppercase">Halftime</h2>
+            <p className="text-sm text-stone-300 max-w-md text-center">
+              {homeCounty.name} {hudState.homeScore} — {hudState.awayScore} {awayCounty.name}
+            </p>
+            <p className="text-xs text-stone-400">Possession switches for the second half. The kickoff is simulated.</p>
+            <button
+              onClick={handleStartSecondHalf}
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md shadow-lg transition-colors cursor-pointer text-sm"
+            >
+              Start Second Half
+            </button>
+          </div>
+        )}
 
         {/* Touchdown Celebration Overlay */}
         {hudState.phase === 'TOUCHDOWN' && (
