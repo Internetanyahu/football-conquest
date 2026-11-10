@@ -629,7 +629,11 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
       awayScore: eng.drive.awayScore,
       winnerCountyId: winnerId,
       loserCountyId: loserId,
-      statsText: `Home ${homeCounty.name}: ${eng.drive.homeScore} · Away ${awayCounty.name}: ${eng.drive.awayScore}. Pass yards: ${eng.stats.home.passYards + eng.stats.away.passYards}; rush yards: ${eng.stats.home.rushYards + eng.stats.away.rushYards}.`,
+      statsText: [
+        `Periods: ${eng.drive.quarterScores.home.map((score, index) => `Q${index + 1} ${score}-${eng.drive.quarterScores.away[index] || 0}`).join(' | ')}`,
+        `Home ${homeCounty.name}: ${eng.drive.homeScore}; pass ${eng.stats.home.passYards} yd (${eng.stats.home.completions}/${eng.stats.home.passAttempts}), rush ${eng.stats.home.rushYards} yd, TD ${eng.stats.home.tds}, turnovers ${eng.stats.home.turnovers}, safeties ${eng.stats.home.safeties}`,
+        `Away ${awayCounty.name}: ${eng.drive.awayScore}; pass ${eng.stats.away.passYards} yd (${eng.stats.away.completions}/${eng.stats.away.passAttempts}), rush ${eng.stats.away.rushYards} yd, TD ${eng.stats.away.tds}, turnovers ${eng.stats.away.turnovers}, safeties ${eng.stats.away.safeties}`,
+      ].join('. '),
     });
   };
 
