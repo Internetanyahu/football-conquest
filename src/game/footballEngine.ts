@@ -456,13 +456,13 @@ export class FootballEngine {
       } else if (p.position === 'WR1') {
         // Deep streak or post route
         p.x += (this.drive.possession === 'HOME' ? 1 : -1) * (p.speed / 100) * 7.5 * dt;
-        if (p.x > this.drive.lineOfScrimmage + 10) {
+        if ((p.x - this.drive.lineOfScrimmage) * (this.drive.possession === 'HOME' ? 1 : -1) > 10) {
           p.y += 1.8 * dt; // cut inward
         }
       } else if (p.position === 'WR2') {
         // Quick slant or corner route
         p.x += (this.drive.possession === 'HOME' ? 1 : -1) * (p.speed / 100) * 7.0 * dt;
-        if (p.x > this.drive.lineOfScrimmage + 6) {
+        if ((p.x - this.drive.lineOfScrimmage) * (this.drive.possession === 'HOME' ? 1 : -1) > 6) {
           p.y -= 2.2 * dt;
         }
       } else if (p.position === 'TE' || p.position === 'OL') {
@@ -498,7 +498,7 @@ export class FootballEngine {
         p.y += (dy / Math.max(1, dist)) * lbSpeed * dt;
       } else if (p.position === 'CB') {
         // Cornerbacks shadow receivers or pursue carrier if ball is past LOS
-        if (target.x > this.drive.lineOfScrimmage + 2) {
+        if ((target.x - this.drive.lineOfScrimmage) * (this.drive.possession === 'HOME' ? 1 : -1) > 2) {
           const cbSpeed = (p.speed / 100) * 7.2;
           p.x += (dx / Math.max(1, dist)) * cbSpeed * dt;
           p.y += (dy / Math.max(1, dist)) * cbSpeed * dt;
@@ -607,8 +607,8 @@ export class FootballEngine {
       // First Down!
       soundEngine.playFirstDown();
       this.drive.down = 1;
-      this.drive.distance = 10;
       this.drive.firstDownLine = direction > 0 ? Math.min(100, newLOS + 10) : Math.max(0, newLOS - 10);
+      this.drive.distance = Math.max(1, Math.ceil(Math.abs(this.drive.firstDownLine - newLOS)));
       this.drive.playResultText = `FIRST DOWN! Ball on the ${newLOS} yard line.`;
     } else {
       this.drive.down++;
@@ -674,6 +674,7 @@ export class FootballEngine {
   }
 
   public attemptFieldGoal() {
+    if (this.drive.phase !== 'PLAY_SELECT' || this.drive.down !== 4) return;
     this.drive.phase = 'FIELD_GOAL_AIM';
     this.drive.kickMeterValue = 50;
     this.drive.playResultText = 'Tap KICK to lock power and accuracy!';
@@ -708,6 +709,7 @@ export class FootballEngine {
   }
 
   public puntBall() {
+    if (this.drive.phase !== 'PLAY_SELECT' || this.drive.down !== 4) return;
     soundEngine.playKick();
     const puntDist = Math.round(38 + Math.random() * 15);
     const direction = this.drive.possession === 'HOME' ? 1 : -1;
