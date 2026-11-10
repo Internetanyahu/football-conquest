@@ -89,6 +89,7 @@ export class FootballEngine {
   private playElapsed: number = 0;
   private jukeCooldown: number = 0;
   private periodExpired: boolean = false;
+  private kickoffPending: boolean = false;
 
   constructor(
     homeCountyId: string,
@@ -143,6 +144,7 @@ export class FootballEngine {
   }
 
   public selectPlay(play: PlayCall) {
+    this.kickoffPending = false;
     this.drive.currentPlay = play;
     this.drive.phase = 'PRE_SNAP';
     this.setupFormation();
@@ -751,6 +753,7 @@ export class FootballEngine {
   }
 
   private switchPossessionForKickoff() {
+    this.kickoffPending = true;
     this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
     this.drive.lineOfScrimmage = this.drive.possession === 'HOME' ? 75 : 25;
     const direction = this.drive.possession === 'HOME' ? 1 : -1;
@@ -785,7 +788,10 @@ export class FootballEngine {
 
   public startSecondHalf() {
     if (this.drive.phase !== 'HALFTIME') return;
-    this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
+    if (!this.kickoffPending) {
+      this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
+    }
+    this.kickoffPending = false;
     this.drive.lineOfScrimmage = this.drive.possession === 'HOME' ? 75 : 25;
     const direction = this.drive.possession === 'HOME' ? 1 : -1;
     this.drive.firstDownLine = this.drive.lineOfScrimmage + direction * 10;
