@@ -46,6 +46,7 @@ export function createInitialGameState(): GameState {
         date: 'Autumn 1897',
       },
     ],
+    matchHistory: [],
     memorialHallOfFame: [],
   };
 }
@@ -67,6 +68,7 @@ export function loadGameState(): GameState {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.version === 1) {
         const saved = parsed as GameState;
+        if (!Array.isArray(saved.matchHistory)) saved.matchHistory = [];
         const expandedTemplate = expandCountyTerritories(INITIAL_COUNTIES);
         const missingIds = Object.keys(expandedTemplate).filter((id) => !saved.counties[id]);
 
@@ -235,6 +237,18 @@ export function executeAnnexation(
     date: `Week ${newState.currentWeek}, ${newState.currentSeason}`,
   };
   newState.annexationHistory.unshift(logEntry);
+  newState.matchHistory.unshift({
+    id: logEntry.id,
+    week: newState.currentWeek,
+    season: newState.currentSeason,
+    winnerCountyName: winnerCounty.name,
+    loserCountyName: loserCounty.name,
+    score: scoreText,
+    outcome: 'WIN',
+    coachName: playerCoach?.name || 'Head Coach',
+    pfcName: playerPfc?.name || 'Private Football Syndicate',
+    date: `Week ${newState.currentWeek}, ${newState.currentSeason}`,
+  });
 
   // 5. Relocate Coach to the nearest active contested border
   const nextBorder = findNearestContestedBorderCounty(
@@ -269,6 +283,19 @@ export function executeDefeat(
     playerCoach.losses++;
     playerCoach.reputation = Math.max(20, playerCoach.reputation - 2);
   }
+
+  newState.matchHistory.unshift({
+    id: `MATCH_${Date.now()}`,
+    week: newState.currentWeek,
+    season: newState.currentSeason,
+    winnerCountyName: away.name,
+    loserCountyName: home.name,
+    score: scoreText,
+    outcome: 'LOSS',
+    coachName: playerCoach?.name || 'Head Coach',
+    pfcName: newState.pfcs[newState.playerPfcId]?.name || 'Private Football Syndicate',
+    date: `Week ${newState.currentWeek}, ${newState.currentSeason}`,
+  });
 
   const nextBorder = findNearestContestedBorderCounty(
     homeCountyId,
