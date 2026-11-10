@@ -173,6 +173,18 @@ export interface GameState {
     score: string;
     date: string;
   }[];
+  matchHistory: {
+    id: string;
+    week: number;
+    season: number;
+    winnerCountyName: string;
+    loserCountyName: string;
+    score: string;
+    outcome: 'WIN' | 'LOSS';
+    coachName: string;
+    pfcName: string;
+    date: string;
+  }[];
   memorialHallOfFame: {
     athlete: Athlete;
     tribute: string;
