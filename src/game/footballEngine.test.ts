@@ -57,6 +57,27 @@ test('second quarter ends at halftime and the second half changes possession', (
   assert.equal(engine.drive.down, 1);
 });
 
+test('a play that reaches the end zone at zero does not get cut off before the conversion', () => {
+  const engine = makeEngine();
+  engine.drive.quarter = 2;
+  engine.drive.gameClock = 0.01;
+  engine.drive.lineOfScrimmage = 90;
+  engine.drive.firstDownLine = 100;
+  engine.drive.phase = 'PLAY_SELECT';
+  engine.selectPlay(runPlay);
+  engine.snapBall();
+  assert.ok(engine.ball.carrier);
+  engine.ball.carrier.x = 99.9;
+
+  engine.update(0.02);
+
+  assert.equal(engine.drive.phase, 'TOUCHDOWN');
+  assert.equal(engine.drive.quarter, 2);
+  engine.kickExtraPoint();
+  assert.equal(engine.drive.phase, 'HALFTIME');
+  assert.equal(engine.drive.quarter, 3);
+});
+
 test('a tied regulation game enters overtime with a score slot and alternating possession', () => {
   const engine = makeEngine();
   engine.drive.quarter = 4;
