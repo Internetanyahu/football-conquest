@@ -181,6 +181,7 @@ export interface GameState {
     winnerCountyName: string;
     loserCountyName: string;
     score: string;
+    statsText?: string;
     outcome: 'WIN' | 'LOSS';
     coachName: string;
     pfcName: string;
