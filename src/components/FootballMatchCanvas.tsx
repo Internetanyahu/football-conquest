@@ -101,7 +101,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
     lineOfScrimmage: 25,
     homeScore: 0,
     awayScore: 0,
-    phase: 'PLAY_SELECT',
+    phase: 'KICKOFF',
     possession: 'HOME',
     commentary: 'Select an offensive play to begin drive.',
     kickMeter: 50,
@@ -605,6 +605,10 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
     engineRef.current?.kickExtraPoint();
   };
 
+  const handleStartOpeningDrive = () => {
+    engineRef.current?.startOpeningDrive();
+  };
+
   const handleStartSecondHalf = () => {
     engineRef.current?.startSecondHalf();
     setIsPaused(false);
@@ -737,6 +741,22 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
         <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-stone-950/85 backdrop-blur-sm border border-stone-700/60 px-4 py-1.5 rounded-md text-xs font-medium text-stone-200 shadow-md whitespace-nowrap pointer-events-none">
           {hudState.commentary}
         </div>
+
+        {hudState.phase === 'KICKOFF' && (
+          <div className="absolute inset-0 bg-stone-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 p-6 z-20">
+            <div className="text-amber-400 text-xs font-bold tracking-[0.3em] uppercase">Match day</div>
+            <h2 className="text-4xl font-extrabold font-display tracking-tight text-white uppercase">Opening Kickoff</h2>
+            <p className="text-sm text-stone-300 max-w-md text-center">
+              The opening kick is simulated. {homeCounty.name} receives the ball at its 25-yard line.
+            </p>
+            <button
+              onClick={handleStartOpeningDrive}
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md shadow-lg transition-colors cursor-pointer text-sm"
+            >
+              Receive Kickoff
+            </button>
+          </div>
+        )}
 
         {hudState.phase === 'HALFTIME' && (
           <div className="absolute inset-0 bg-stone-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 p-6 z-20">
