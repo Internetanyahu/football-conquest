@@ -770,8 +770,9 @@ export class FootballEngine {
     // period expires scoreless, begin another period and alternate possession.
     this.drive.quarter = Math.max(5, this.drive.quarter + 1);
     this.drive.gameClock = 90;
-    this.drive.quarterScores.home.push(0);
-    this.drive.quarterScores.away.push(0);
+    const periodIndex = this.drive.quarter - 1;
+    while (this.drive.quarterScores.home.length <= periodIndex) this.drive.quarterScores.home.push(0);
+    while (this.drive.quarterScores.away.length <= periodIndex) this.drive.quarterScores.away.push(0);
     this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
     this.drive.lineOfScrimmage = 25;
     this.drive.firstDownLine = 35;
