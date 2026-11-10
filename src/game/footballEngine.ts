@@ -82,8 +82,8 @@ export class FootballEngine {
 
   // Box score tracking
   public stats = {
-    home: { passYards: 0, rushYards: 0, completions: 0, passAttempts: 0, tds: 0, turnovers: 0, sacks: 0 },
-    away: { passYards: 0, rushYards: 0, completions: 0, passAttempts: 0, tds: 0, turnovers: 0, sacks: 0 },
+    home: { passYards: 0, rushYards: 0, completions: 0, passAttempts: 0, tds: 0, turnovers: 0, sacks: 0, safeties: 0 },
+    away: { passYards: 0, rushYards: 0, completions: 0, passAttempts: 0, tds: 0, turnovers: 0, sacks: 0, safeties: 0 },
   };
 
   private playElapsed: number = 0;
@@ -383,6 +383,10 @@ export class FootballEngine {
 
         // Check for Touchdown! (Reaching endzone at X >= 100)
         const direction = this.drive.possession === 'HOME' ? 1 : -1;
+        if ((direction > 0 && p.x <= 0) || (direction < 0 && p.x >= 100)) {
+          this.scoreSafety();
+          return;
+        }
         if ((direction > 0 && p.x >= 100) || (direction < 0 && p.x <= 0)) {
           this.scoreTouchdown();
           return;
@@ -656,6 +660,15 @@ export class FootballEngine {
 
     // Sudden-death overtime ends on the touchdown; no extra point is required.
     if (this.drive.quarter >= 5) this.finishGame();
+  }
+
+  private scoreSafety() {
+    const scoringTeam = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
+    this.addPeriodPoints(scoringTeam, 2);
+    if (scoringTeam === 'HOME') this.stats.home.safeties++;
+    else this.stats.away.safeties++;
+    this.switchPossessionForKickoff();
+    this.drive.playResultText = `SAFETY! ${scoringTeam} scores 2 points.`;
   }
 
   public kickExtraPoint() {
