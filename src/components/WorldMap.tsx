@@ -169,6 +169,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             <h2 className="text-sm font-bold font-display uppercase tracking-wider text-stone-100">
               North American Territorial Theatre
             </h2>
+            <span className="ml-2 rounded border border-amber-600/40 bg-amber-950/40 px-2 py-1 text-[10px] font-mono font-bold text-amber-300">
+              {Object.keys(gameState.counties).length} PLAYABLE TERRITORIES
+            </span>
+            <h2 className="sr-only">North American Territorial Theatre
+            </h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -197,6 +202,22 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        {/* Expansion summary */}
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded border border-stone-800 bg-stone-950 px-2 py-2">
+            <div className="font-mono text-lg font-bold text-amber-400">{Object.keys(gameState.counties).length}</div>
+            <div className="text-[9px] uppercase tracking-wider text-stone-500">Playable territories</div>
+          </div>
+          <div className="rounded border border-stone-800 bg-stone-950 px-2 py-2">
+            <div className="font-mono text-lg font-bold text-stone-200">62</div>
+            <div className="text-[9px] uppercase tracking-wider text-stone-500">Original regions</div>
+          </div>
+          <div className="rounded border border-stone-800 bg-stone-950 px-2 py-2">
+            <div className="font-mono text-lg font-bold text-emerald-400">3×</div>
+            <div className="text-[9px] uppercase tracking-wider text-stone-500">Territory detail</div>
           </div>
         </div>
 
@@ -327,7 +348,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     fontWeight={isSelected ? '700' : '500'}
                     className="pointer-events-none drop-shadow"
                   >
-                    {county.name.split(' ')[0]}
+                    {county.name.split(' ').slice(0, 2).join(' ')}
                   </text>
                 </g>
               );
