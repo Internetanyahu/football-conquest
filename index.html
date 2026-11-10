@@ -10,7 +10,7 @@
 <script>
 (()=>{
 const $=id=>document.getElementById(id),canvas=$("field"),ctx=canvas.getContext("2d"),W=960,H=420,GROUND=328;
-let score=[0,0],down=1,spot=25,quarter=1,seconds=120,stamina=100,playType="run",phase="ready",gameOver=false,frame=0,last="—",held={},raf=0,playStart=25,ball={x:240,y:GROUND-23},carrier=null,players=[],target=null,passBall=null,driveTime=0;
+let score=[0,0],down=1,spot=25,quarter=1,seconds=120,stamina=100,playType="run",phase="ready",gameOver=false,frame=0,last="—",held={},raf=0,playStart=25,ball={x:240,y:GROUND-23},carrier=null,players=[],target=null,passBall=null,driveTime=0,playStartX=315;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function fmt(t){return Math.floor(t/60)+":"+String(t%60).padStart(2,"0")}
 function fieldSpot(v){return v<=50?"Own "+v:"Opp "+(100-v)}
@@ -37,18 +37,18 @@ function draw(){ctx.clearRect(0,0,W,H);rect(0,0,W,H,"#286343");for(let i=0;i<12;
  players.forEach(p=>{if(p.active!==false)sprite(p)});if(passBall){rect(passBall.x-5,passBall.y-3,10,6,"#784827");rect(passBall.x-1,passBall.y-2,2,4,"#f0dfb8")}
  if(phase==="ready"){ctx.fillStyle="#f3e8c8";ctx.font="bold 13px monospace";ctx.fillText("SELECT PLAY",W/2-48,75)}
 }
-function createPlayers(){players=[];let y=GROUND-22;let qb={id:"qb",team:"home",x:205,y,number:"8",role:"qb",active:true,ball:playType==="pass"};let hb={id:"hb",team:"home",x:250,y,number:"2",role:"runner",active:true,ball:playType==="run"};players.push(qb,hb);let rec1={id:"r1",team:"home",x:335,y:GROUND-72,number:"11",role:"receiver",route:"up",active:true};let rec2={id:"r2",team:"home",x:390,y:GROUND-25,number:"5",role:"receiver",route:"deep",active:true};players.push(rec1,rec2);
+function createPlayers(){players=[];let y=GROUND-22;playStartX=160+spot*6.2;let qb={id:"qb",team:"home",x:playStartX-70,y,number:"8",role:"qb",active:true,ball:playType==="pass"};let hb={id:"hb",team:"home",x:playStartX,y,number:"2",role:"runner",active:true,ball:playType==="run"};players.push(qb,hb);let rec1={id:"r1",team:"home",x:playStartX+95,y:GROUND-72,number:"11",role:"receiver",route:"up",active:true};let rec2={id:"r2",team:"home",x:playStartX+150,y:GROUND-25,number:"5",role:"receiver",route:"deep",active:true};players.push(rec1,rec2);
  // linemen / blockers
- for(let i=0;i<3;i++)players.push({id:"b"+i,team:"home",x:275+i*22,y:GROUND-22+(i-1)*12,number:""+(60+i),role:"blocker",active:true});
- for(let i=0;i<5;i++)players.push({id:"d"+i,team:"away",x:430+(i%3)*60,y:GROUND-22-(i%2)*48,number:""+(20+i),role:"defender",active:true,speed:0.7+Math.random()*.35});
+ for(let i=0;i<3;i++)players.push({id:"b"+i,team:"home",x:playStartX+25+i*22,y:GROUND-22+(i-1)*12,number:""+(60+i),role:"blocker",active:true});
+ for(let i=0;i<5;i++)players.push({id:"d"+i,team:"away",x:playStartX+150+(i%3)*60,y:GROUND-22-(i%2)*48,number:""+(20+i),role:"defender",active:true,speed:0.7+Math.random()*.35});
  target=playType==="pass"?rec1:null;carrier=playType==="run"?hb:null;ball={x:qb.x,y:qb.y-5};}
 function start(){if(phase!=="ready"||gameOver)return;createPlayers();phase="live";frame=0;driveTime=0;log((playType==="run"?"Power run":"Quick pass")+" — snap!");ui();cancelAnimationFrame(raf);loop()}
 function finish(reason,gained){if(phase!=="live")return;phase="over";let yards=Math.round(gained);spot=clamp(spot+yards,0,100);last=(yards>=0?"+":"")+yards+" yd";if(spot>=100){score[0]+=7;log("TOUCHDOWN! Home county scores 7.");spot=25;down=1;playStart=25}else if(spot<=0){score[1]+=2;log("Safety! Visiting county scores 2.");spot=25;down=1;playStart=25}else if(spot-playStart>=10){down=1;playStart=spot;log("First down. Gained "+yards+" yards.")}else if(down<4){down++;log(reason+". Gained "+yards+" yards.")}else{log("Turnover on downs. Visiting county takes over.");score[1]+=3;down=1;spot=25;playStart=25}if(score[0]>=28||score[1]>=28||seconds<=0){gameOver=true;log("Final score: "+score[0]+"–"+score[1]+".")}ui();draw()}
 function pass(){if(phase!=="live"||playType!=="pass"||carrier||passBall)return;let qb=players.find(p=>p.id==="qb");qb.ball=false;let r=target||players.find(p=>p.id==="r1");passBall={x:qb.x+12,y:qb.y-15,tx:r.x,ty:r.y-15,t:0,receiver:r};log("Pass thrown to receiver "+r.number+".");ui()}
 function handoff(){if(phase!=="live"||carrier)return;let hb=players.find(p=>p.id==="hb");players.find(p=>p.id==="qb").ball=false;hb.ball=true;carrier=hb;log("Quarterback hands off. Runner has the ball.");ui()}
 function choose(type){if(phase!=="ready")return;playType=type;$("runPlay").classList.toggle("selected",type==="run");$("passPlay").classList.toggle("selected",type==="pass");$("playInfo").textContent=type==="run"?"Take the handoff and run behind your blockers. Use the open sideline to escape.":"Two receivers run routes. Click a receiver on the field or use Pass to throw to the highlighted target.";ui();draw()}
-function tackle(p){let gained=(p.x-250)/6.2;finish("Tackled",gained)}
-function loop(){if(phase!=="live")return;frame++;if(frame%60===0){seconds=Math.max(0,seconds-1);if(seconds===0){finish("Time expired",carrier?(carrier.x-250)/6.2:0);return}}
+function tackle(p){let gained=(p.x-playStartX)/6.2;finish("Tackled",gained)}
+function loop(){if(phase!=="live")return;frame++;if(frame%60===0){seconds=Math.max(0,seconds-1);if(seconds===0){finish("Time expired",carrier?(carrier.x-playStartX)/6.2:0);return}}
  let dx=0,dy=0;if(held.ArrowRight||held.d)dx++;if(held.ArrowLeft||held.a)dx--;if(held.ArrowUp||held.w)dy--;if(held.ArrowDown||held.s)dy++;let moving=dx||dy,sprint=!!held.Shift&&stamina>0,speed=sprint?2.7:1.8;if(sprint&&moving)stamina=Math.max(0,stamina-.16);else stamina=Math.min(100,stamina+.05);
  if(carrier){let mag=Math.hypot(dx,dy)||1;carrier.x=clamp(carrier.x+(dx/mag)*speed,100,W-18);carrier.y=clamp(carrier.y+(dy/mag)*speed,GROUND-100,GROUND-16);carrier.ball=true;
    players.filter(p=>p.team==="away"&&p.active).forEach(d=>{let vx=carrier.x-d.x,vy=carrier.y-d.y,dist=Math.hypot(vx,vy)||1;d.x+=vx/dist*d.speed;d.y+=vy/dist*d.speed;if(dist<18){tackle(carrier)}});if(carrier.x>=W-58){finish("Touchdown",Math.max(0,100-spot));return}
