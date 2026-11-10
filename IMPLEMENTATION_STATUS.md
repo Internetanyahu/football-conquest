@@ -6,8 +6,8 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 | GDD phase | Status | Implemented | Still required |
 |---|---|---|---|
-| 1. Football engine | Partial | Native side-view match, running, passing, catching, defensive pursuit, scoring, kicking, clock, overtime loop, pause/resume, match statistics | Full kickoff/halftime flow, robust defensive formations and AI, penalties, control and balance testing |
-| 2. Territorial engine | Partial | 186 schematic territories, state ownership, adjacency graph, selectable map cells, pan/zoom, search/filter, challenge launch, adjacency and same-state guards, annexation, coach relocation, match and annexation history | Accurate North American county geography, verified adjacency against boundaries, municipality records, multi-challenge locks |
+| 1. Football engine | Partial | Native side-view match, running, passing, catching, defensive pursuit, scoring, kicking, clock, halftime transition, sudden-death overtime periods, pause/resume, match statistics, automated period-transition tests | Explicit opening kickoff sequence, robust defensive formations and AI, penalties, full control and balance playtesting |
+| 2. Territorial engine | Partial | 186 schematic territories, state ownership, normalized reciprocal adjacency graph, dangling/self-link cleanup for migrated saves, selectable map cells, pan/zoom, search/filter, challenge launch, adjacency and same-state guards, annexation, coach relocation, match and annexation history, adjacency unit tests | Accurate North American county geography and boundary-derived adjacency, municipality records, multi-challenge locks |
 | 3. Population and athletes | Partial | Procedural rosters, local prospects, attributes, recruitment, training | Attribute-driven match balance, aging, injuries, retirement, rare permanent death, lifecycle history |
 | 4. Coach and PFC career | Partial | Coach record, PFC employment, win compensation, facilities, treasury, one-time sponsorship offers, coach/PFC career display | NPC PFC operations, real contracts, expenses, hiring market, career opportunities, PFC creation and ownership progression |
 | 5. Solo campaign | Partial | Local campaign, county competition, local save migration, export/import, historical records | Full NPC competition, offline world simulation, tutorial, campaign progression and completion |
@@ -28,6 +28,20 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 - Removed the in-game GitHub token push panel and insecure placeholder server endpoints.
 - Changed the GDD reader to load the complete authoritative `GDD.md`, not a partial hardcoded summary.
 - Updated the README to distinguish working features from unfinished systems.
+
+## Latest engineering pass
+
+- Added a distinct halftime state after the second quarter, with an explicit second-half continuation action and simulated second-half kickoff/possession switch.
+- Corrected quarter transitions so the clock cannot repeatedly advance periods after reaching zero.
+- Added safe per-period scoring allocation, including additional overtime periods.
+- Overtime now alternates possession between scoreless 90-second periods and ends immediately on a sudden-death touchdown or field goal.
+- Added automated tests for halftime, regulation completion, overtime entry/extension, overtime touchdown resolution, and county adjacency normalization.
+- Added shared county-adjacency validation and repair for saved campaigns. This removes dangling/self/duplicate links and repairs one-way links; it does not prove that the underlying schematic neighbor data matches real geography.
+- Added the automated test suite to the Pages workflow before the production build.
+
+## Remaining qualification
+
+The opening kickoff is still represented as an initial drive from the 25-yard line rather than a playable kickoff sequence. Defensive formations, penalties, balance, and real-world geography remain unfinished. Do not mark either Phase 1 or Phase 2 complete until their GDD acceptance criteria are exercised.
 
 ## Deployment
 
