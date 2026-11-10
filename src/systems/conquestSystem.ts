@@ -178,7 +178,8 @@ export function executeAnnexation(
   winnerCountyId: string,
   loserCountyId: string,
   gameState: GameState,
-  scoreText: string
+  scoreText: string,
+  statsText = ''
 ): GameState {
   const newState = JSON.parse(JSON.stringify(gameState)) as GameState;
   const winnerCounty = newState.counties[winnerCountyId];
@@ -244,6 +245,7 @@ export function executeAnnexation(
     winnerCountyName: winnerCounty.name,
     loserCountyName: loserCounty.name,
     score: scoreText,
+    statsText,
     outcome: 'WIN',
     coachName: playerCoach?.name || 'Head Coach',
     pfcName: playerPfc?.name || 'Private Football Syndicate',
@@ -291,6 +293,7 @@ export function executeDefeat(
     winnerCountyName: away.name,
     loserCountyName: home.name,
     score: scoreText.split('-').length === 2 ? scoreText.split('-').reverse().map((part) => part.trim()).join(' - ') : scoreText,
+    statsText,
     outcome: 'LOSS',
     coachName: playerCoach?.name || 'Head Coach',
     pfcName: newState.pfcs[newState.playerPfcId]?.name || 'Private Football Syndicate',
