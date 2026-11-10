@@ -45,7 +45,7 @@ export const RetroBowlMatch: React.FC<RetroBowlMatchProps> = ({
       awayScore: parsedAway,
       winnerCountyId: homeWon ? homeCounty.id : awayCounty.id,
       loserCountyId: homeWon ? awayCounty.id : homeCounty.id,
-      statsText: `Retro Bowl result manually reported by player: ${parsedHome}-${parsedAway}. The external game's score could not be independently verified.`,
+      statsText: `Home ${homeCounty.name}: ${parsedHome} · Away ${awayCounty.name}: ${parsedAway}. Retro Bowl score manually reported; external result not independently verified.`,
     });
   };
 
