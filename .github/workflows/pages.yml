@@ -35,6 +35,9 @@ jobs:
       - name: TypeScript check
         run: npm run lint
 
+      - name: Automated gameplay and territory tests
+        run: npm run test
+
       - name: Build Vite application
         run: npm run build
 
