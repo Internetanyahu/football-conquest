@@ -25,6 +25,16 @@ function makeEngine() {
   );
 }
 
+test('opening kickoff is explicitly simulated before the first offensive drive', () => {
+  const engine = makeEngine();
+  assert.equal(engine.drive.phase, 'KICKOFF');
+  engine.startOpeningDrive();
+  assert.equal(engine.drive.phase, 'PLAY_SELECT');
+  assert.match(engine.drive.playResultText, /Opening kickoff simulated/);
+  assert.equal(engine.drive.possession, 'HOME');
+  assert.equal(engine.drive.lineOfScrimmage, 25);
+});
+
 test('second quarter ends at halftime and the second half changes possession', () => {
   const engine = makeEngine();
   engine.drive.quarter = 2;
