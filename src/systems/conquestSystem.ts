@@ -273,7 +273,8 @@ export function executeDefeat(
   homeCountyId: string,
   awayCountyId: string,
   gameState: GameState,
-  scoreText: string
+  scoreText: string,
+  statsText = ''
 ): GameState {
   const newState = JSON.parse(JSON.stringify(gameState)) as GameState;
   const playerCoach = newState.coaches[newState.playerCoachId];
