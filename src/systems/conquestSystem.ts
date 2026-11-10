@@ -185,6 +185,9 @@ export function executeAnnexation(
   const playerPfc = newState.pfcs[newState.playerPfcId];
 
   if (!winnerCounty || !loserCounty) return gameState;
+  const playerAssignmentValid = !playerCoach || playerCoach.currentCountyId === winnerCountyId;
+  const countiesAreAdjacent = winnerCounty.neighbors.includes(loserCountyId) || loserCounty.neighbors.includes(winnerCountyId);
+  if (!playerAssignmentValid || !countiesAreAdjacent || winnerCounty.stateId === loserCounty.stateId) return gameState;
 
   const previousLoserStateId = loserCounty.stateId;
   const previousLoserStateName = loserCounty.stateName;
@@ -258,6 +261,9 @@ export function executeDefeat(
 ): GameState {
   const newState = JSON.parse(JSON.stringify(gameState)) as GameState;
   const playerCoach = newState.coaches[newState.playerCoachId];
+  const home = newState.counties[homeCountyId];
+  const away = newState.counties[awayCountyId];
+  if (!home || !away || home.stateId === away.stateId || (!home.neighbors.includes(awayCountyId) && !away.neighbors.includes(homeCountyId))) return gameState;
 
   if (playerCoach) {
     playerCoach.losses++;
