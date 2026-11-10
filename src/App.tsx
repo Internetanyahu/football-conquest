@@ -75,6 +75,16 @@ export default function App() {
     statsText: string;
   }) => {
     if (!activeMatch) return;
+    const scoresValid = Number.isInteger(result.homeScore) && Number.isInteger(result.awayScore) && result.homeScore >= 0 && result.awayScore >= 0;
+    if (!scoresValid || result.homeScore === result.awayScore) {
+      setLastMatchNotice('A tied or invalid score cannot resolve a county challenge. Complete a valid overtime result.');
+      return;
+    }
+    const expectedWinnerId = result.homeScore > result.awayScore ? activeMatch.homeCounty.id : activeMatch.awayCounty.id;
+    if (result.winnerCountyId !== expectedWinnerId) {
+      setLastMatchNotice('The reported winner does not match the final score. No territorial change was made.');
+      return;
+    }
 
     const isHomeWinner = result.winnerCountyId === activeMatch.homeCounty.id;
     let updated: GameState;
