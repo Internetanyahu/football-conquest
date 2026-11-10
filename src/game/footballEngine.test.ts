@@ -32,7 +32,8 @@ test('opening kickoff is explicitly simulated before the first offensive drive',
   assert.equal(engine.drive.phase, 'PLAY_SELECT');
   assert.match(engine.drive.playResultText, /Opening kickoff simulated/);
   assert.equal(engine.drive.possession, 'HOME');
-  assert.equal(engine.drive.lineOfScrimmage, 25);
+  assert.equal(engine.drive.lineOfScrimmage, 75);
+  assert.equal(engine.drive.firstDownLine, 85);
 });
 
 test('second quarter ends at halftime and the second half changes possession', () => {
@@ -107,6 +108,95 @@ test('a sudden-death overtime touchdown ends the match and records the period sc
   assert.equal(engine.drive.phase, 'GAME_OVER');
   assert.equal(engine.drive.homeScore, 6);
   assert.equal(engine.drive.quarterScores.home[4], 6);
+});
+
+test('away offense lines up behind the ball and advances toward the left end zone', () => {
+  const engine = makeEngine();
+  engine.drive.possession = 'AWAY';
+  engine.drive.lineOfScrimmage = 25;
+  engine.drive.firstDownLine = 15;
+  engine.drive.phase = 'PLAY_SELECT';
+  engine.selectPlay(runPlay);
+  engine.snapBall();
+
+  const carrier = engine.ball.carrier;
+  assert.ok(carrier);
+  const startX = carrier.x;
+  engine.update(0.1);
+
+  assert.ok(carrier.x < startX, `expected away carrier to move left from ${startX}, got ${carrier.x}`);
+});
+
+test('away touchdown is scored at the left end zone', () => {
+  const engine = makeEngine();
+  engine.drive.possession = 'AWAY';
+  engine.drive.lineOfScrimmage = 5;
+  engine.drive.firstDownLine = 0;
+  engine.drive.phase = 'PLAY_SELECT';
+  engine.selectPlay(runPlay);
+  engine.snapBall();
+  assert.ok(engine.ball.carrier);
+  engine.ball.carrier.x = 0.1;
+
+  engine.update(0.1);
+
+  assert.equal(engine.drive.phase, 'TOUCHDOWN');
+  assert.equal(engine.drive.awayScore, 6);
+  assert.equal(engine.drive.quarterScores.away[0], 6);
+});
+
+test('a turnover preserves the physical field position and reverses attacking direction', () => {
+  const engine = makeEngine();
+  engine.drive.possession = 'HOME';
+  const internals = engine as unknown as { resolveTurnover: (spot: number) => void };
+
+  internals.resolveTurnover(62);
+
+  assert.equal(engine.drive.possession, 'AWAY');
+  assert.equal(engine.drive.lineOfScrimmage, 62);
+  assert.equal(engine.drive.firstDownLine, 52);
+});
+
+test('away first downs advance toward lower field coordinates', () => {
+  const engine = makeEngine();
+  engine.drive.possession = 'AWAY';
+  engine.drive.lineOfScrimmage = 25;
+  engine.drive.firstDownLine = 15;
+  const internals = engine as unknown as { advanceDown: (yards: number) => void };
+
+  internals.advanceDown(10);
+
+  assert.equal(engine.drive.lineOfScrimmage, 15);
+  assert.equal(engine.drive.down, 1);
+  assert.equal(engine.drive.firstDownLine, 5);
+  assert.equal(engine.drive.distance, 10);
+});
+
+test('field goals and punts are restricted to fourth down', () => {
+  const engine = makeEngine();
+  engine.drive.phase = 'PLAY_SELECT';
+  engine.drive.down = 3;
+
+  engine.attemptFieldGoal();
+  engine.puntBall();
+
+  assert.equal(engine.drive.phase, 'PLAY_SELECT');
+});
+
+test('a successful away field goal uses away-side distance and kicks off to home', () => {
+  const engine = makeEngine();
+  engine.drive.possession = 'AWAY';
+  engine.drive.lineOfScrimmage = 40;
+  engine.drive.down = 4;
+  engine.drive.phase = 'PLAY_SELECT';
+
+  engine.attemptFieldGoal();
+  engine.drive.kickMeterValue = 50;
+  engine.resolveKick();
+
+  assert.equal(engine.drive.awayScore, 3);
+  assert.equal(engine.drive.possession, 'HOME');
+  assert.equal(engine.drive.lineOfScrimmage, 75);
 });
 
 test('a non-tied regulation result ends at the fourth-quarter horn', () => {
