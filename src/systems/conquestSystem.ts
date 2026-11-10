@@ -277,7 +277,7 @@ export function executeDefeat(
   const playerCoach = newState.coaches[newState.playerCoachId];
   const home = newState.counties[homeCountyId];
   const away = newState.counties[awayCountyId];
-  if (!home || !away || home.stateId === away.stateId || (!home.neighbors.includes(awayCountyId) && !away.neighbors.includes(homeCountyId))) return gameState;
+  if (!home || !away || (playerCoach && playerCoach.currentCountyId !== homeCountyId) || home.stateId === away.stateId || (!home.neighbors.includes(awayCountyId) && !away.neighbors.includes(homeCountyId))) return gameState;
 
   if (playerCoach) {
     playerCoach.losses++;
@@ -290,7 +290,7 @@ export function executeDefeat(
     season: newState.currentSeason,
     winnerCountyName: away.name,
     loserCountyName: home.name,
-    score: scoreText,
+    score: scoreText.split('-').length === 2 ? scoreText.split('-').reverse().map((part) => part.trim()).join(' - ') : scoreText,
     outcome: 'LOSS',
     coachName: playerCoach?.name || 'Head Coach',
     pfcName: newState.pfcs[newState.playerPfcId]?.name || 'Private Football Syndicate',
