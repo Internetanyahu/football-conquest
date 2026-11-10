@@ -88,6 +88,7 @@ export class FootballEngine {
 
   private playElapsed: number = 0;
   private jukeCooldown: number = 0;
+  private periodExpired: boolean = false;
 
   constructor(
     homeCountyId: string,
@@ -330,10 +331,7 @@ export class FootballEngine {
 
     // Update game clock
     this.drive.gameClock = Math.max(0, this.drive.gameClock - dt * 0.8);
-    if (this.drive.gameClock === 0) {
-      this.advanceQuarter();
-      return;
-    }
+    if (this.drive.gameClock === 0) this.periodExpired = true;
 
     // 1. Update ball in flight
     if (this.ball.isThrown) {
@@ -628,6 +626,7 @@ export class FootballEngine {
     }
 
     this.setupFormation();
+    this.finishExpiredPeriodIfNeeded();
   }
 
   private addPeriodPoints(team: 'HOME' | 'AWAY', points: number) {
@@ -644,6 +643,7 @@ export class FootballEngine {
   }
 
   private finishGame() {
+    this.periodExpired = false;
     this.drive.phase = 'GAME_OVER';
     this.drive.gameClock = 0;
     soundEngine.playTouchdown();
@@ -669,6 +669,7 @@ export class FootballEngine {
     else this.stats.away.safeties++;
     this.switchPossessionForKickoff();
     this.drive.playResultText = `SAFETY! ${scoringTeam} scores 2 points.`;
+    this.finishExpiredPeriodIfNeeded();
   }
 
   public kickExtraPoint() {
@@ -684,6 +685,7 @@ export class FootballEngine {
     }
 
     this.switchPossessionForKickoff();
+    this.finishExpiredPeriodIfNeeded();
   }
 
   public attemptFieldGoal() {
@@ -734,6 +736,7 @@ export class FootballEngine {
   private resolveTurnover(turnoverYard: number) {
     const turnoverSpot = Math.max(1, Math.min(99, turnoverYard));
     this.switchPossession(turnoverSpot);
+    this.finishExpiredPeriodIfNeeded();
   }
 
   private switchPossession(newLOS: number) {
@@ -791,6 +794,12 @@ export class FootballEngine {
     this.drive.phase = 'PLAY_SELECT';
     this.drive.playResultText = `Second-half kickoff. ${this.drive.possession} takes possession at its 25.`;
     this.setupFormation();
+  }
+
+  private finishExpiredPeriodIfNeeded() {
+    if (!this.periodExpired || this.drive.phase === 'GAME_OVER') return;
+    this.periodExpired = false;
+    this.advanceQuarter();
   }
 
   private advanceQuarter() {
