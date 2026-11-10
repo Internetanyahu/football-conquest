@@ -13,7 +13,7 @@ The first milestone is a playable map interaction loop:
 5. Simulate a win or loss.
 6. On a win, transfer the entire target county to the home state's control.
 
-Ownership changes currently exist only in browser memory and reset when the page reloads.
+County ownership and the last 30 territorial challenge results are saved in the browser's local storage. The save is local to that browser and device; it is not an online multiplayer save.
 
 ## Run it
 
@@ -42,8 +42,10 @@ The renderer uses a low-resolution canvas for a pixelated appearance while retai
 
 ## Current limitations
 
-- Ownership is session-only.
+- Saves are local to one browser/device; there is no cloud account or cross-device synchronization.
 - County names are not labeled on the map; use the county search field.
+- County intelligence shows the selected county's owner and number of adjacent counties.
+- The world record tracks successful annexations and failed challenges.
 - No persistent save, accounts, state-management layer, PFC system, or football simulation yet.
 - Population and municipality data have not been integrated.
 - The current geography is the United States, not the full North American game world.
@@ -52,8 +54,8 @@ The renderer uses a low-resolution canvas for a pixelated appearance while retai
 
 1. Improve pixel rendering and map navigation.
 2. Add county details, population, and state ownership information.
-3. Persist territory changes locally.
-4. Add territorial challenge history and rules.
+3. Add map navigation, county labels, and richer geographic details.
+4. Add a proper political/state ownership layer and territorial challenge rules.
 5. Build the football match that resolves challenges.
 6. Expand the world simulation beyond the United States.
 
