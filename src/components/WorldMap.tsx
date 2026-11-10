@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { County, GameState } from '../types/game';
 import { getEligibleNeighborTargets } from '../systems/conquestSystem';
 import { Shield, Users, Trophy, MapPin, Swords, Search } from 'lucide-react';
@@ -25,10 +25,28 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [stateFilter, setStateFilter] = useState<string>('ALL');
+  const [countyShapes, setCountyShapes] = useState<any[]>([]);
+  const [countyShapeCount, setCountyShapeCount] = useState(0);
+  const countyCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const countyHitAreas = useRef<Array<{ path: Path2D; countyId: string }>>([]);
 
   const selectedCounty = gameState.counties[selectedCountyId];
   const playerCoach = gameState.coaches[gameState.playerCoachId];
   const playerCurrentCounty = gameState.counties[playerCoach?.currentCountyId || 'C_BER'];
+
+  useEffect(() => {
+    let active = true;
+    fetch('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json')
+      .then((response) => {
+        if (!response.ok) throw new Error(`County map request failed: ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        if (active && Array.isArray(data.features)) setCountyShapes(data.features);
+      })
+      .catch((error) => console.warn('County detail map unavailable; using campaign map only.', error));
+    return () => { active = false; };
+  }, []);
 
   // Calculate eligible target counties from player's current coach location
   const eligibleTargets = useMemo(() => {
@@ -39,6 +57,81 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const eligibleTargetIds = useMemo(() => {
     return new Set(eligibleTargets.map((c) => c.id));
   }, [eligibleTargets]);
+  
+  // Render thousands of real county boundaries into a low-resolution canvas.
+  // The nearest campaign territory supplies ownership color and click behavior.
+  useEffect(() => {
+    const canvas = countyCanvasRef.current;
+    if (!canvas || countyShapes.length === 0) return;
+    const width = 500;
+    const height = 330;
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    context.fillStyle = '#0c0a09';
+    context.fillRect(0, 0, width, height);
+    const campaignCounties = Object.values(gameState.counties);
+    const hitAreas: Array<{ path: Path2D; countyId: string }> = [];
+    const project = (point: number[]) => ({
+      x: ((point[0] + 126) / 60) * width,
+      y: ((50 - point[1]) / 27) * height,
+    });
+    for (const feature of countyShapes) {
+      const geometry = feature?.geometry;
+      if (!geometry) continue;
+      const polygons = geometry.type === 'Polygon'
+        ? [geometry.coordinates]
+        : geometry.type === 'MultiPolygon' ? geometry.coordinates : [];
+      if (!polygons.length) continue;
+      const path = new Path2D();
+      let sumX = 0;
+      let sumY = 0;
+      let pointCount = 0;
+      for (const polygon of polygons) {
+        for (const ring of polygon) {
+          if (!Array.isArray(ring) || ring.length < 3) continue;
+          ring.forEach((point: number[], index: number) => {
+            const projected = project(point);
+            if (index === 0) path.moveTo(projected.x, projected.y);
+            else path.lineTo(projected.x, projected.y);
+            sumX += projected.x;
+            sumY += projected.y;
+            pointCount++;
+          });
+          path.closePath();
+        }
+      }
+      if (!pointCount) continue;
+      const centerX = sumX / pointCount;
+      const centerY = sumY / pointCount;
+      if (centerX < 0 || centerX > width || centerY < 0 || centerY > height) continue;
+      let nearest = campaignCounties[0];
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      for (const county of campaignCounties) {
+        const dx = county.x / 2 - centerX;
+        const dy = county.y / 2 - centerY;
+        const distance = dx * dx + dy * dy;
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearest = county;
+        }
+      }
+      const state = gameState.states[nearest.stateId];
+      context.fillStyle = nearest.id === selectedCountyId
+        ? '#b7791f'
+        : eligibleTargetIds.has(nearest.id)
+          ? '#28765c'
+          : (state?.color || nearest.homeColor);
+      context.fill(path, 'evenodd');
+      context.strokeStyle = '#0c0a09';
+      context.lineWidth = 0.65;
+      context.stroke(path);
+      hitAreas.push({ path, countyId: nearest.id });
+    }
+    countyHitAreas.current = hitAreas;
+    setCountyShapeCount(hitAreas.length);
+  }, [countyShapes, gameState.counties, gameState.states, selectedCountyId, eligibleTargetIds]);
 
   // Filtered counties for search
   const filteredCounties = useMemo(() => {
@@ -122,16 +215,37 @@ export const WorldMap: React.FC<WorldMapProps> = ({
 
         {/* SVG Interactive Map */}
         <div className="relative w-full aspect-[16/10] bg-stone-950 rounded border border-stone-800/80 overflow-hidden flex items-center justify-center">
+          <canvas
+            ref={countyCanvasRef}
+            aria-label="Pixelated United States county map"
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              const x = ((event.clientX - rect.left) / rect.width) * 500;
+              const y = ((event.clientY - rect.top) / rect.height) * 330;
+              const context = event.currentTarget.getContext('2d');
+              if (!context) return;
+              for (let i = countyHitAreas.current.length - 1; i >= 0; i--) {
+                const area = countyHitAreas.current[i];
+                if (context.isPointInPath(area.path, x, y)) {
+                  const county = gameState.counties[area.countyId];
+                  if (county) handleCountyClick(county);
+                  break;
+                }
+              }
+            }}
+            className="absolute inset-0 w-full h-full"
+            style={{ imageRendering: 'pixelated', cursor: 'crosshair' }}
+          />
           <svg
             viewBox="0 0 1000 660"
-            className="w-full h-full select-none"
+            className="relative z-10 w-full h-full select-none pointer-events-none"
             style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }}
           >
             {/* Background Map Water & Continental Outline Tint */}
-            <rect width="1000" height="660" fill="#0c0a09" />
+            <rect width="1000" height="660" fill="transparent" />
             <path
               d="M 100 80 Q 250 60 500 70 Q 750 40 920 80 Q 940 300 880 500 Q 750 640 500 580 Q 280 550 120 450 Q 80 250 100 80 Z"
-              fill="#141210"
+              fill="transparent"
               stroke="#292524"
               strokeWidth="1.5"
             />
@@ -169,7 +283,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                 <g
                   key={county.id}
                   onClick={() => handleCountyClick(county)}
-                  className="cursor-pointer transition-transform duration-150 hover:scale-125"
+                  className="cursor-pointer transition-transform duration-150 hover:scale-125 pointer-events-auto"
                   transform={`translate(${county.x}, ${county.y})`}
                 >
                   {/* Eligible Target Highlight Pulse Ring */}
@@ -219,6 +333,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               );
             })}
           </svg>
+
+          <div className="absolute top-3 right-3 z-20 bg-stone-950/85 border border-stone-800 px-2 py-1 rounded text-[10px] text-stone-300">
+            {countyShapeCount > 0 ? `${countyShapeCount.toLocaleString()} county outlines · pixelated detail` : 'Loading county boundaries…'}
+          </div>
 
           {/* Map Legend */}
           <div className="absolute bottom-3 left-3 bg-stone-950/85 backdrop-blur-sm border border-stone-800 p-2.5 rounded text-[11px] text-stone-300 flex flex-col gap-1.5 pointer-events-none">
