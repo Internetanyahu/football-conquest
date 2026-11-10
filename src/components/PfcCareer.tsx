@@ -45,12 +45,13 @@ export const PfcCareer: React.FC<PfcCareerProps> = ({ gameState, onUpdateState }
 
   // Sign a municipal sponsorship deal
   const handleSignSponsorship = (dealName: string, reward: number) => {
-    if (!playerPfc) return;
+    if (!playerPfc || (playerPfc.signedSponsorships || []).includes(dealName)) return;
     soundEngine.playFirstDown();
     const updatedState = { ...gameState };
     const pfc = updatedState.pfcs[gameState.playerPfcId];
     pfc.treasury += reward;
     pfc.reputation = Math.min(100, pfc.reputation + 2);
+    pfc.signedSponsorships = [...(pfc.signedSponsorships || []), dealName];
     onUpdateState(updatedState);
   };
 
@@ -245,9 +246,10 @@ export const PfcCareer: React.FC<PfcCareerProps> = ({ gameState, onUpdateState }
                 </div>
                 <button
                   onClick={() => handleSignSponsorship('Commonwealth Steamrail Charter', 18000)}
+                  disabled={(playerPfc?.signedSponsorships || []).includes('Commonwealth Steamrail Charter')}
                   className="px-3 py-1 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded text-xs transition-colors cursor-pointer"
                 >
-                  Collect $18,000
+                  {(playerPfc?.signedSponsorships || []).includes('Commonwealth Steamrail Charter') ? 'Signed' : 'Sign · $18,000'}
                 </button>
               </div>
 
@@ -258,9 +260,10 @@ export const PfcCareer: React.FC<PfcCareerProps> = ({ gameState, onUpdateState }
                 </div>
                 <button
                   onClick={() => handleSignSponsorship('Continental Woolen Mills', 12500)}
+                  disabled={(playerPfc?.signedSponsorships || []).includes('Continental Woolen Mills')}
                   className="px-3 py-1 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded text-xs transition-colors cursor-pointer"
                 >
-                  Collect $12,500
+                  {(playerPfc?.signedSponsorships || []).includes('Continental Woolen Mills') ? 'Signed' : 'Sign · $12,500'}
                 </button>
               </div>
             </div>
