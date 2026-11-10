@@ -55,7 +55,7 @@ export interface DriveState {
   homeScore: number;
   awayScore: number;
   quarterScores: { home: number[]; away: number[] };
-  phase: 'PLAY_SELECT' | 'PRE_SNAP' | 'ACTIVE_PLAY' | 'TACKLE_RESOLVED' | 'TOUCHDOWN' | 'FIELD_GOAL_AIM' | 'HALFTIME' | 'GAME_OVER';
+  phase: 'KICKOFF' | 'PLAY_SELECT' | 'PRE_SNAP' | 'ACTIVE_PLAY' | 'TACKLE_RESOLVED' | 'TOUCHDOWN' | 'FIELD_GOAL_AIM' | 'HALFTIME' | 'GAME_OVER';
   possession: 'HOME' | 'AWAY';
   playResultText: string;
   currentPlay: PlayCall | null;
@@ -118,7 +118,7 @@ export class FootballEngine {
       homeScore: 0,
       awayScore: 0,
       quarterScores: { home: [0, 0, 0, 0], away: [0, 0, 0, 0] },
-      phase: 'PLAY_SELECT',
+      phase: 'KICKOFF',
       possession: 'HOME',
       playResultText: '1st & 10 at the 25. Select offensive play.',
       currentPlay: null,
@@ -728,6 +728,13 @@ export class FootballEngine {
       this.drive.kickMeterValue = 0;
       this.drive.kickMeterDirection = 1;
     }
+  }
+
+  public startOpeningDrive() {
+    if (this.drive.phase !== 'KICKOFF') return;
+    this.drive.phase = 'PLAY_SELECT';
+    this.drive.playResultText = 'Opening kickoff simulated. HOME receives at its 25-yard line.';
+    this.setupFormation();
   }
 
   public startSecondHalf() {
