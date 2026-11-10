@@ -5,16 +5,17 @@
 
 import React, { useState } from 'react';
 import { GameState } from '../types/game';
-import { History, Download, Upload, RotateCcw, HeartHandshake, CloudUpload, ExternalLink, Check, Copy } from 'lucide-react';
+import { History, Download, Upload, RotateCcw, HeartHandshake, CloudUpload, ExternalLink, Check, Copy, BookOpen } from 'lucide-react';
 import { createInitialGameState, saveGameState } from '../systems/conquestSystem';
 import { soundEngine } from '../audio/soundEngine';
 
 interface HistoryViewProps {
   gameState: GameState;
   onUpdateState: (newState: GameState) => void;
+  onOpenGdd?: () => void;
 }
 
-export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateState }) => {
+export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateState, onOpenGdd }) => {
   const [ghToken, setGhToken] = useState('');
   const [isPushing, setIsPushing] = useState(false);
   const [pushStatus, setPushStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({
@@ -134,6 +135,20 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateSta
 
         {/* Data Persistence Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
+          {onOpenGdd && (
+            <button
+              onClick={() => {
+                soundEngine.playClick();
+                onOpenGdd();
+              }}
+              className="px-3 py-1.5 bg-stone-950 border border-amber-600/70 hover:border-amber-500 text-amber-300 hover:text-amber-200 rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow"
+              title="Open the complete 44-section Game Design Document"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <span>Read Master GDD (v1.0)</span>
+            </button>
+          )}
+
           <button
             onClick={handleExportSave}
             className="px-3 py-1.5 bg-stone-950 border border-stone-800 hover:border-stone-700 text-stone-300 hover:text-white rounded text-xs flex items-center gap-1.5 transition-colors cursor-pointer"

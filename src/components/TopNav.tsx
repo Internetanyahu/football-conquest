@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Volume2, VolumeX, Swords } from 'lucide-react';
+import { Volume2, VolumeX, Swords, BookOpen } from 'lucide-react';
 import { soundEngine } from '../audio/soundEngine';
 
 export type ActiveTab = 'MATCH' | 'MAP' | 'ROSTER' | 'PFC' | 'POLITICS' | 'ONLINE' | 'HISTORY';
@@ -16,6 +16,7 @@ interface TopNavProps {
   onToggleMute: () => void;
   onQuickChallenge: () => void;
   isMatchActive: boolean;
+  onOpenGdd?: () => void;
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -25,6 +26,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onToggleMute,
   onQuickChallenge,
   isMatchActive,
+  onOpenGdd,
 }) => {
   return (
     <header className="flex items-center justify-between gap-8 px-6 py-3.5 bg-stone-950 border-b border-stone-800 shrink-0 select-none">
@@ -124,6 +126,20 @@ export const TopNav: React.FC<TopNavProps> = ({
         >
           Annals
         </button>
+
+        {onOpenGdd && (
+          <button
+            onClick={() => {
+              soundEngine.playClick();
+              onOpenGdd();
+            }}
+            className="hover:text-amber-300 transition-colors whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 text-stone-400"
+            title="Read Authoritative Game Design Document (v1.0)"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-500" />
+            <span>GDD Manual</span>
+          </button>
+        )}
       </nav>
 
       {/* Zone 3: 1 Primary Action & Audio Control */}

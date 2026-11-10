@@ -13,6 +13,7 @@ import { PfcCareer } from './components/PfcCareer';
 import { PoliticsView } from './components/PoliticsView';
 import { OnlineLeagueView } from './components/OnlineLeagueView';
 import { HistoryView } from './components/HistoryView';
+import { GddReaderModal } from './components/GddReaderModal';
 import { TopNav, ActiveTab } from './components/TopNav';
 import { soundEngine } from './audio/soundEngine';
 import { Trophy, Swords, Map, Users, Briefcase, Landmark } from 'lucide-react';
@@ -21,6 +22,7 @@ export default function App() {
   const [gameState, setGameState] = useState<GameState>(() => loadGameState());
   const [activeTab, setActiveTab] = useState<ActiveTab>('MAP');
   const [isMuted, setIsMuted] = useState(soundEngine.getMuted());
+  const [isGddOpen, setIsGddOpen] = useState(false);
 
   // Active Match State
   const [activeMatch, setActiveMatch] = useState<{
@@ -116,6 +118,7 @@ export default function App() {
         onToggleMute={handleToggleMute}
         onQuickChallenge={handleQuickChallenge}
         isMatchActive={!!activeMatch}
+        onOpenGdd={() => setIsGddOpen(true)}
       />
 
       {/* 2. Notification Banner */}
@@ -200,9 +203,16 @@ export default function App() {
         )}
 
         {activeTab === 'HISTORY' && (
-          <HistoryView gameState={gameState} onUpdateState={setGameState} />
+          <HistoryView
+            gameState={gameState}
+            onUpdateState={setGameState}
+            onOpenGdd={() => setIsGddOpen(true)}
+          />
         )}
       </main>
+
+      {/* GDD Reader Modal */}
+      <GddReaderModal isOpen={isGddOpen} onClose={() => setIsGddOpen(false)} />
 
       {/* 4. Mobile Bottom Navigation Bar (for small viewports & Chromebook touch) */}
       <footer className="md:hidden fixed bottom-0 left-0 right-0 bg-stone-950/95 backdrop-blur border-t border-stone-800 flex items-center justify-around py-2 px-1 z-40 text-[10px]">

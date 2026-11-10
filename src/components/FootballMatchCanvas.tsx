@@ -106,9 +106,40 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
   });
 
   const [matchEnded, setMatchEnded] = useState(false);
+  const weatherParticlesRef = useRef<{ x: number; y: number; speed: number; size: number }[]>([]);
+
+  const callAudible = useCallback(() => {
+    const eng = engineRef.current;
+    if (!eng || eng.drive.phase !== 'PRE_SNAP') return;
+    const currentId = eng.drive.currentPlay?.id;
+    const currentIndex = PLAYBOOK.findIndex((p) => p.id === currentId);
+    const nextPlay = PLAYBOOK[(currentIndex + 1) % PLAYBOOK.length];
+    eng.selectPlay(nextPlay);
+    soundEngine.playWhistle();
+    eng.drive.playResultText = `AUDIBLE CALLED: Switched to ${nextPlay.name}!`;
+  }, []);
 
   // Initialize Engine
   useEffect(() => {
+    const weatherType = ['STATE_LAU', 'STATE_GL'].includes(homeCounty.stateId)
+      ? 'SNOW'
+      : ['STATE_PAC', 'STATE_HUD'].includes(homeCounty.stateId)
+      ? 'RAIN'
+      : 'CLEAR';
+
+    const particles: { x: number; y: number; speed: number; size: number }[] = [];
+    if (weatherType !== 'CLEAR') {
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: Math.random() * 960,
+          y: Math.random() * 540,
+          speed: weatherType === 'SNOW' ? 25 + Math.random() * 25 : 220 + Math.random() * 120,
+          size: weatherType === 'SNOW' ? 1.5 + Math.random() * 2 : 1 + Math.random() * 1.5,
+        });
+      }
+    }
+    weatherParticlesRef.current = particles;
+
     const engine = new FootballEngine(
       homeCounty.id,
       awayCounty.id,
@@ -116,7 +147,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
       awayRoster,
       { primary: homeCounty.homeColor, secondary: homeCounty.secondaryColor },
       { primary: awayCounty.homeColor, secondary: awayCounty.secondaryColor },
-      'CLEAR'
+      weatherType
     );
     engineRef.current = engine;
 
@@ -144,6 +175,9 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
         } else if (eng.drive.phase === 'FIELD_GOAL_AIM') {
           eng.resolveKick();
         }
+      } else if ((e.code === 'KeyU' || e.code === 'KeyA') && eng.drive.phase === 'PRE_SNAP') {
+        e.preventDefault();
+        callAudible();
       }
     };
 
@@ -354,6 +388,44 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
 
     // Draw Ball & Projected Shadow
     drawBall(ctx, eng, w, h, cameraTargetX, scale);
+
+    // Weather Atmosphere Layer (Rain streaks or Snow flurry particles)
+    if (eng.weather === 'RAIN') {
+      ctx.strokeStyle = 'rgba(186, 230, 253, 0.45)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      for (const p of weatherParticlesRef.current) {
+        p.y += p.speed * 0.016;
+        p.x -= p.speed * 0.005;
+        if (p.y > h) {
+          p.y = -10;
+          p.x = Math.random() * w;
+        }
+        if (p.x < 0) {
+          p.x = w;
+        }
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - 4, p.y + 11);
+      }
+      ctx.stroke();
+    } else if (eng.weather === 'SNOW') {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.beginPath();
+      for (const p of weatherParticlesRef.current) {
+        p.y += p.speed * 0.016;
+        p.x += Math.sin(p.y * 0.04) * 0.6;
+        if (p.y > h) {
+          p.y = -10;
+          p.x = Math.random() * w;
+        }
+        if (p.x > w) {
+          p.x = 0;
+        }
+        ctx.moveTo(p.x, p.y);
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    }
   };
 
   const drawPixelPlayer = (
@@ -608,6 +680,13 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
               {hudState.down} & {hudState.distance}
             </span>
           </div>
+
+          <div className="hidden sm:flex flex-col items-center bg-stone-950 px-2.5 py-1 rounded border border-stone-800">
+            <span className="text-[10px] text-stone-500 font-sans uppercase">Field</span>
+            <span className="text-xs font-bold text-stone-300">
+              {engineRef.current?.weather || 'CLEAR'}
+            </span>
+          </div>
         </div>
 
         {/* Exit match early if needed */}
@@ -781,25 +860,35 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
           <span className="text-stone-300 font-semibold">Controls:</span>
           <span><kbd className="px-1.5 py-0.5 bg-stone-800 text-stone-200 rounded font-mono">W A S D</kbd> / <kbd className="px-1.5 py-0.5 bg-stone-800 text-stone-200 rounded font-mono">Arrows</kbd> Steer Runner</span>
           <span><kbd className="px-1.5 py-0.5 bg-stone-800 text-stone-200 rounded font-mono">Drag Mouse/Touch</kbd> Aim Pass</span>
-          <span><kbd className="px-1.5 py-0.5 bg-stone-800 text-stone-200 rounded font-mono">Space</kbd> Snap / Hike / Juke</span>
+          <span><kbd className="px-1.5 py-0.5 bg-stone-800 text-stone-200 rounded font-mono">Space</kbd> Hike / Juke</span>
+          <span><kbd className="px-1.5 py-0.5 bg-stone-800 text-stone-200 rounded font-mono">A / U</kbd> Audible</span>
         </div>
 
         {/* Mobile touch action triggers */}
         <div className="flex items-center gap-2">
           {hudState.phase === 'PRE_SNAP' && (
-            <button
-              onClick={() => engineRef.current?.snapBall()}
-              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-xs uppercase cursor-pointer"
-            >
-              Hike Ball
-            </button>
+            <>
+              <button
+                onClick={callAudible}
+                className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-amber-300 font-bold rounded text-xs uppercase cursor-pointer border border-stone-700"
+                title="Change play call at the line of scrimmage"
+              >
+                Audible (A)
+              </button>
+              <button
+                onClick={() => engineRef.current?.snapBall()}
+                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-xs uppercase cursor-pointer shadow"
+              >
+                Hike Ball (Space)
+              </button>
+            </>
           )}
           {hudState.phase === 'ACTIVE_PLAY' && (
             <button
               onClick={() => engineRef.current?.performJuke()}
-              className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded text-xs uppercase cursor-pointer"
+              className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded text-xs uppercase cursor-pointer shadow"
             >
-              Juke / Burst
+              Juke / Burst (Space)
             </button>
           )}
         </div>
