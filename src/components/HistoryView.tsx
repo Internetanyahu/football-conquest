@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { GameState } from '../types/game';
-import { History, Download, Upload, RotateCcw, HeartHandshake, CloudUpload, ExternalLink, Check, Copy, BookOpen } from 'lucide-react';
+import { History, Download, Upload, RotateCcw, HeartHandshake, BookOpen, Trophy } from 'lucide-react';
 import { createInitialGameState, saveGameState } from '../systems/conquestSystem';
 import { soundEngine } from '../audio/soundEngine';
 
@@ -16,14 +16,6 @@ interface HistoryViewProps {
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateState, onOpenGdd }) => {
-  const [ghToken, setGhToken] = useState('');
-  const [isPushing, setIsPushing] = useState(false);
-  const [pushStatus, setPushStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({
-    type: 'idle',
-    message: '',
-  });
-  const [copiedCmd, setCopiedCmd] = useState(false);
-
   const handleExportSave = () => {
     soundEngine.playClick();
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(gameState, null, 2));
@@ -44,6 +36,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateSta
         const parsed = JSON.parse(event.target?.result as string);
         if (parsed && parsed.version === 1) {
           soundEngine.playFirstDown();
+          parsed.matchHistory = Array.isArray(parsed.matchHistory) ? parsed.matchHistory : [];
           saveGameState(parsed);
           onUpdateState(parsed);
         } else {
@@ -65,58 +58,6 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateSta
     }
   };
 
-  const handlePushToPages = async () => {
-    if (!ghToken.trim()) {
-      setPushStatus({
-        type: 'error',
-        message: 'Please paste your GitHub Personal Access Token with repo write permissions.',
-      });
-      return;
-    }
-
-    setIsPushing(true);
-    setPushStatus({ type: 'idle', message: 'Authenticating with GitHub and pushing branch...' });
-
-    try {
-      const res = await fetch('/api/git/push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: ghToken.trim() }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        soundEngine.playTouchdown();
-        setPushStatus({
-          type: 'success',
-          message: data.message || 'Pushed successfully to Internetanyahu/football-conquest!',
-        });
-      } else {
-        soundEngine.playTurnover();
-        setPushStatus({
-          type: 'error',
-          message: data.error || 'Failed to push to GitHub. Verify token permissions.',
-        });
-      }
-    } catch (err: unknown) {
-      soundEngine.playTurnover();
-      const msg = err instanceof Error ? err.message : 'Network error connecting to git push service';
-      setPushStatus({
-        type: 'error',
-        message: msg,
-      });
-    } finally {
-      setIsPushing(false);
-    }
-  };
-
-  const copyGitCommand = () => {
-    soundEngine.playClick();
-    navigator.clipboard.writeText('git push -u origin main --force');
-    setCopiedCmd(true);
-    setTimeout(() => setCopiedCmd(false), 2000);
-  };
-
   return (
     <div className="w-full max-w-7xl mx-auto p-4 flex flex-col gap-6">
       {/* 1. Header Bar */}
@@ -126,10 +67,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateSta
             Chronicle of Conquest & Preservation
           </span>
           <h2 className="text-2xl font-bold font-display text-stone-100 tracking-wide mt-0.5">
-            Territorial Annals & Deployment Console
+            World History & Records
           </h2>
           <p className="text-xs text-stone-400">
-            Official historical records, campaign backups, and GitHub Pages continuous deployment.
+            Match results, territorial changes, and campaign backups.
           </p>
         </div>
 
@@ -173,111 +114,34 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateSta
         </div>
       </div>
 
-      {/* 2. GitHub Pages Push & Deployment Panel */}
-      <div className="bg-stone-900 border border-amber-600/40 rounded-lg p-5 shadow-xl flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-800 pb-3">
+      {/* Complete county match record */}
+      <section className="bg-stone-900 border border-stone-800 rounded-lg p-5 flex flex-col gap-3">
+        <div className="flex items-center justify-between border-b border-stone-800 pb-3">
           <div className="flex items-center gap-2">
-            <CloudUpload className="w-5 h-5 text-amber-400" />
-            <h3 className="text-sm font-bold font-display uppercase tracking-wider text-stone-100">
-              Push to GitHub Pages Deployment
-            </h3>
+            <Trophy className="w-4 h-4 text-amber-400" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-stone-100">County Match Results</h3>
           </div>
-          <a
-            href="https://internetanyahu.github.io/football-conquest/"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 underline font-medium"
-          >
-            <span>Live Site: internetanyahu.github.io/football-conquest</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <span className="text-[10px] font-mono text-stone-500">{gameState.matchHistory?.length || 0} recorded</span>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
-          {/* Method A: Direct Push via Personal Access Token */}
-          <div className="bg-stone-950 border border-stone-800 p-4 rounded-md flex flex-col justify-between gap-3">
-            <div>
-              <span className="font-bold text-stone-200 block text-sm">
-                1-Click Push via GitHub Token
-              </span>
-              <p className="text-[11px] text-stone-400 mt-1 leading-relaxed">
-                Provide your GitHub Personal Access Token (classic `repo` or fine-grained `Contents` & `Workflows` write) to push all commits and the pre-built `./docs` & `.github/workflows/pages.yml` files directly to `origin/main`.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <input
-                type="password"
-                placeholder="ghp_... (GitHub Personal Access Token)"
-                value={ghToken}
-                onChange={(e) => setGhToken(e.target.value)}
-                className="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded text-xs text-stone-100 placeholder:text-stone-500 font-mono focus:outline-none focus:border-amber-500"
-              />
-              <button
-                onClick={handlePushToPages}
-                disabled={isPushing}
-                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2"
-              >
-                <CloudUpload className="w-4 h-4" />
-                <span>{isPushing ? 'Pushing to GitHub...' : 'Push to GitHub Pages Now'}</span>
-              </button>
-            </div>
-
-            {pushStatus.type !== 'idle' && (
-              <div
-                className={`p-2.5 rounded text-[11px] ${
-                  pushStatus.type === 'success'
-                    ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/80'
-                    : 'bg-red-950/70 text-red-300 border border-red-800/80'
-                }`}
-              >
-                {pushStatus.message}
+        {gameState.matchHistory?.length ? (
+          <div className="divide-y divide-stone-800">
+            {gameState.matchHistory.map((match) => (
+              <div key={match.id} className="py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="min-w-0">
+                  <div className="font-semibold text-stone-100">{match.winnerCountyName} <span className="text-stone-500 font-normal">def.</span> {match.loserCountyName}</div>
+                  <div className="mt-1 text-[10px] text-stone-500">{match.coachName} · {match.pfcName} · {match.date}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-stone-200">{match.score}</span>
+                  <span className={match.outcome === 'WIN' ? 'text-emerald-400' : 'text-red-400'}>{match.outcome}</span>
+                </div>
               </div>
-            )}
+            ))}
           </div>
-
-          {/* Method B: Terminal / Bundle Downloads */}
-          <div className="bg-stone-950 border border-stone-800 p-4 rounded-md flex flex-col justify-between gap-3">
-            <div>
-              <span className="font-bold text-stone-200 block text-sm">
-                Terminal Push & Offline Bundle
-              </span>
-              <p className="text-[11px] text-stone-400 mt-1 leading-relaxed">
-                Repository commits and static builds are fully prepared. If working from local terminal or Chromebook bash:
-              </p>
-              <div className="mt-2 p-2.5 bg-stone-900 rounded font-mono text-[11px] text-stone-300 flex items-center justify-between border border-stone-800">
-                <code>git push -u origin main --force</code>
-                <button
-                  onClick={copyGitCommand}
-                  className="text-stone-400 hover:text-stone-200 p-1 cursor-pointer"
-                  title="Copy command"
-                >
-                  {copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-stone-800">
-              <a
-                href="/api/download/bundle"
-                download="football-conquest.bundle"
-                className="flex-1 py-1.5 px-2 bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-200 rounded text-[11px] font-semibold text-center flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3 h-3 text-amber-400" />
-                <span>Git Bundle (.bundle)</span>
-              </a>
-              <a
-                href="/api/download/archive"
-                download="football-conquest.tar.gz"
-                className="flex-1 py-1.5 px-2 bg-stone-900 hover:bg-stone-800 border border-stone-700 text-stone-200 rounded text-[11px] font-semibold text-center flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <Download className="w-3 h-3 text-cyan-400" />
-                <span>Source Archive (.tar.gz)</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+        ) : (
+          <p className="py-5 text-center text-xs text-stone-500">Completed county matches will appear here.</p>
+        )}
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 3. Annexation History Timeline (Left 2 Cols) */}
