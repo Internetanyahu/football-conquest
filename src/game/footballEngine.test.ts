@@ -77,7 +77,7 @@ test('a play that reaches the end zone at zero does not get cut off before the c
   assert.ok(engine.ball.carrier);
   engine.ball.carrier.x = 99.9;
 
-  engine.update(0.02);
+  engine.update(0.1);
 
   assert.equal(engine.drive.phase, 'TOUCHDOWN');
   assert.equal(engine.drive.quarter, 2);
