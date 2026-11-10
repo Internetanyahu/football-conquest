@@ -4,7 +4,6 @@ import { Globe, Trophy, ShieldAlert } from 'lucide-react';
 
 interface OnlineLeagueViewProps {
   gameState: GameState;
-  onChallengeOnlinePlayer: (targetCountyId: string) => void;
 }
 
 export const OnlineLeagueView: React.FC<OnlineLeagueViewProps> = ({ gameState }) => {
