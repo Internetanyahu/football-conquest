@@ -233,7 +233,9 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
           gameClock: Math.max(0, Math.round(eng.drive.gameClock)),
           down: eng.drive.down,
           distance: eng.drive.distance,
-          lineOfScrimmage: eng.drive.lineOfScrimmage,
+          lineOfScrimmage: eng.drive.possession === 'HOME'
+            ? eng.drive.lineOfScrimmage
+            : 100 - eng.drive.lineOfScrimmage,
           homeScore: eng.drive.homeScore,
           awayScore: eng.drive.awayScore,
           phase: eng.drive.phase,
@@ -854,7 +856,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-amber-400" />
               <span className="text-xs font-bold text-stone-200 uppercase tracking-wide">
-                Offensive Play Selection · {homeCounty.name}
+                Offensive Play Selection · {hudState.possession === 'HOME' ? homeCounty.name : awayCounty.name}
               </span>
             </div>
             <span className="text-xs text-stone-400">
@@ -895,14 +897,18 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
             <div className="flex gap-2">
               <button
                 onClick={handleFieldGoal}
-                className="flex-1 p-3 bg-stone-950 border border-stone-800 hover:border-stone-700 hover:bg-stone-800/60 rounded text-left flex flex-col justify-center cursor-pointer"
+                disabled={hudState.down !== 4}
+                title={hudState.down === 4 ? 'Attempt a field goal' : 'Field goals are available on fourth down'}
+                className="flex-1 p-3 bg-stone-950 border border-stone-800 hover:border-stone-700 hover:bg-stone-800/60 rounded text-left flex flex-col justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <span className="text-xs font-bold text-stone-200">Field Goal</span>
                 <span className="text-[10px] text-stone-400">Attempt 3-Point Kick</span>
               </button>
               <button
                 onClick={handlePunt}
-                className="flex-1 p-3 bg-stone-950 border border-stone-800 hover:border-stone-700 hover:bg-stone-800/60 rounded text-left flex flex-col justify-center cursor-pointer"
+                disabled={hudState.down !== 4}
+                title={hudState.down === 4 ? 'Punt the ball' : 'Punts are available on fourth down'}
+                className="flex-1 p-3 bg-stone-950 border border-stone-800 hover:border-stone-700 hover:bg-stone-800/60 rounded text-left flex flex-col justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <span className="text-xs font-bold text-stone-200">Punt Ball</span>
                 <span className="text-[10px] text-stone-400">Flip Field Position</span>
