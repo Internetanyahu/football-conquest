@@ -84,7 +84,8 @@ export default function App() {
         activeMatch.homeCounty.id,
         activeMatch.awayCounty.id,
         gameState,
-        `${result.homeScore} - ${result.awayScore}`
+        `${result.homeScore} - ${result.awayScore}`,
+        result.statsText
       );
       setLastMatchNotice(
         `VICTORY! ${activeMatch.awayCounty.name} was successfully annexed into ${activeMatch.homeCounty.stateName}!`
@@ -94,7 +95,8 @@ export default function App() {
         activeMatch.homeCounty.id,
         activeMatch.awayCounty.id,
         gameState,
-        `${result.homeScore} - ${result.awayScore}`
+        `${result.homeScore} - ${result.awayScore}`,
+        result.statsText
       );
       setLastMatchNotice(
         `DEFEAT. Score ${result.homeScore} - ${result.awayScore}. Coach relocated to nearest frontier border.`
