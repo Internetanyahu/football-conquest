@@ -55,7 +55,7 @@ export interface DriveState {
   homeScore: number;
   awayScore: number;
   quarterScores: { home: number[]; away: number[] };
-  phase: 'PLAY_SELECT' | 'PRE_SNAP' | 'ACTIVE_PLAY' | 'TACKLE_RESOLVED' | 'TOUCHDOWN' | 'FIELD_GOAL_AIM' | 'GAME_OVER';
+  phase: 'PLAY_SELECT' | 'PRE_SNAP' | 'ACTIVE_PLAY' | 'TACKLE_RESOLVED' | 'TOUCHDOWN' | 'FIELD_GOAL_AIM' | 'HALFTIME' | 'GAME_OVER';
   possession: 'HOME' | 'AWAY';
   playResultText: string;
   currentPlay: PlayCall | null;
@@ -327,9 +327,10 @@ export class FootballEngine {
     if (this.jukeCooldown > 0) this.jukeCooldown -= dt;
 
     // Update game clock
-    this.drive.gameClock -= dt * 0.8;
-    if (this.drive.gameClock <= 0) {
+    this.drive.gameClock = Math.max(0, this.drive.gameClock - dt * 0.8);
+    if (this.drive.gameClock === 0) {
       this.advanceQuarter();
+      return;
     }
 
     // 1. Update ball in flight
@@ -616,42 +617,50 @@ export class FootballEngine {
     this.setupFormation();
   }
 
+  private addPeriodPoints(team: 'HOME' | 'AWAY', points: number) {
+    const periodIndex = Math.max(0, this.drive.quarter - 1);
+    while (this.drive.quarterScores.home.length <= periodIndex) this.drive.quarterScores.home.push(0);
+    while (this.drive.quarterScores.away.length <= periodIndex) this.drive.quarterScores.away.push(0);
+    if (team === 'HOME') {
+      this.drive.homeScore += points;
+      this.drive.quarterScores.home[periodIndex] += points;
+    } else {
+      this.drive.awayScore += points;
+      this.drive.quarterScores.away[periodIndex] += points;
+    }
+  }
+
+  private finishGame() {
+    this.drive.phase = 'GAME_OVER';
+    this.drive.gameClock = 0;
+    soundEngine.playTouchdown();
+    this.drive.playResultText = `FINAL WHISTLE! ${this.drive.homeScore > this.drive.awayScore ? 'HOME WINS' : 'AWAY WINS'}!`;
+  }
+
   private scoreTouchdown() {
     soundEngine.playTouchdown();
     this.drive.phase = 'TOUCHDOWN';
-
-    if (this.drive.possession === 'HOME') {
-      this.drive.homeScore += 6;
-      this.drive.quarterScores.home[this.drive.quarter - 1] += 6;
-      this.stats.home.tds++;
-    } else {
-      this.drive.awayScore += 6;
-      this.drive.quarterScores.away[this.drive.quarter - 1] += 6;
-      this.stats.away.tds++;
-    }
-
+    this.addPeriodPoints(this.drive.possession, 6);
+    if (this.drive.possession === 'HOME') this.stats.home.tds++;
+    else this.stats.away.tds++;
     this.drive.playResultText = `TOUCHDOWN ${this.drive.possession}! 6 Points!`;
+
+    // Sudden-death overtime ends on the touchdown; no extra point is required.
+    if (this.drive.quarter >= 5) this.finishGame();
   }
 
   public kickExtraPoint() {
-    // 95% reliable PAT
+    if (this.drive.phase !== 'TOUCHDOWN') return;
     const success = Math.random() < 0.94;
     soundEngine.playKick();
 
     if (success) {
-      if (this.drive.possession === 'HOME') {
-        this.drive.homeScore += 1;
-        this.drive.quarterScores.home[this.drive.quarter - 1] += 1;
-      } else {
-        this.drive.awayScore += 1;
-        this.drive.quarterScores.away[this.drive.quarter - 1] += 1;
-      }
+      this.addPeriodPoints(this.drive.possession, 1);
       this.drive.playResultText = 'Extra point kick is GOOD! 7 Points total.';
     } else {
       this.drive.playResultText = 'Extra point kick is NO GOOD wide right!';
     }
 
-    // Hand over possession via kickoff at 25 yard line
     this.switchPossession(25);
   }
 
@@ -673,14 +682,12 @@ export class FootballEngine {
 
     if (isGood) {
       soundEngine.playTouchdown();
-      if (this.drive.possession === 'HOME') {
-        this.drive.homeScore += 3;
-        this.drive.quarterScores.home[this.drive.quarter - 1] += 3;
-      } else {
-        this.drive.awayScore += 3;
-        this.drive.quarterScores.away[this.drive.quarter - 1] += 3;
+      this.addPeriodPoints(this.drive.possession, 3);
+      this.drive.playResultText = `Field Goal from ${dist} yards is GOOD!`;
+      if (this.drive.quarter >= 5) {
+        this.finishGame();
+        return;
       }
-      this.drive.playResultText = `Field Goal from ${dist} yards is IT IS GOOD!`;
     } else {
       soundEngine.playTurnover();
       this.drive.playResultText = `Field Goal from ${dist} yards is NO GOOD!`;
@@ -723,26 +730,57 @@ export class FootballEngine {
     }
   }
 
+  public startSecondHalf() {
+    if (this.drive.phase !== 'HALFTIME') return;
+    this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
+    this.drive.lineOfScrimmage = 25;
+    this.drive.firstDownLine = 35;
+    this.drive.down = 1;
+    this.drive.distance = 10;
+    this.drive.phase = 'PLAY_SELECT';
+    this.drive.playResultText = `Second-half kickoff. ${this.drive.possession} takes possession at its 25.`;
+    this.setupFormation();
+  }
+
   private advanceQuarter() {
-    if (this.drive.quarter < 4) {
+    soundEngine.playWhistle();
+
+    if (this.drive.quarter === 2) {
+      this.drive.quarter = 3;
+      this.drive.gameClock = 120;
+      this.drive.phase = 'HALFTIME';
+      this.drive.playResultText = 'HALFTIME. Teams change ends; possession switches for the second half.';
+      return;
+    }
+
+    if (this.drive.quarter === 1 || this.drive.quarter === 3) {
       this.drive.quarter++;
       this.drive.gameClock = 120;
-      soundEngine.playWhistle();
-      this.drive.playResultText = `End of Quarter ${this.drive.quarter - 1}. Beginning Quarter ${this.drive.quarter}!`;
-    } else {
-      // Check for Overtime if tied
-      if (this.drive.homeScore === this.drive.awayScore) {
-        this.drive.quarter = 5; // Overtime
-        this.drive.gameClock = 90;
-        this.drive.quarterScores.home.push(0);
-        this.drive.quarterScores.away.push(0);
-        this.drive.playResultText = 'OVERTIME! Sudden death rules apply.';
-      } else {
-        // Game Over!
-        this.drive.phase = 'GAME_OVER';
-        soundEngine.playTouchdown();
-        this.drive.playResultText = `FINAL WHISTLE! ${this.drive.homeScore > this.drive.awayScore ? 'HOME WINS' : 'AWAY WINS'}!`;
-      }
+      this.drive.phase = 'PLAY_SELECT';
+      this.drive.playResultText = `End of Quarter ${this.drive.quarter - 1}. Beginning Quarter ${this.drive.quarter}.`;
+      return;
     }
+
+    if (this.drive.homeScore !== this.drive.awayScore) {
+      this.finishGame();
+      return;
+    }
+
+    // A tied regulation game enters sudden-death overtime. If an overtime
+    // period expires scoreless, begin another period and alternate possession.
+    this.drive.quarter = Math.max(5, this.drive.quarter + 1);
+    this.drive.gameClock = 90;
+    this.drive.quarterScores.home.push(0);
+    this.drive.quarterScores.away.push(0);
+    this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
+    this.drive.lineOfScrimmage = 25;
+    this.drive.firstDownLine = 35;
+    this.drive.down = 1;
+    this.drive.distance = 10;
+    this.drive.phase = 'PLAY_SELECT';
+    this.drive.playResultText = this.drive.quarter === 5
+      ? 'OVERTIME! Sudden-death rules apply. Possession alternates from the fourth quarter.'
+      : `OVERTIME ${this.drive.quarter - 4}. No score in the previous period; possession alternates.`;
+    this.setupFormation();
   }
 }
