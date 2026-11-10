@@ -150,7 +150,6 @@ export default function App() {
                   homeCounty={activeMatch.homeCounty}
                   awayCounty={activeMatch.awayCounty}
                   onMatchComplete={handleMatchComplete}
-                  onUseRetroBowl={() => setMatchProvider('RETRO_BOWL')}
                   onExitMatch={() => {
                     setActiveMatch(null);
                     setActiveTab('MAP');
@@ -164,6 +163,7 @@ export default function App() {
                   homeRoster={gameState.rosters[activeMatch.homeCounty.id] || []}
                   awayRoster={gameState.rosters[activeMatch.awayCounty.id] || []}
                   onMatchComplete={handleMatchComplete}
+                  onUseRetroBowl={() => setMatchProvider('RETRO_BOWL')}
                   onExitMatch={() => {
                     setActiveMatch(null);
                     setActiveTab('MAP');
