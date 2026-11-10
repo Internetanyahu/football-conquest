@@ -6,7 +6,7 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 | GDD phase | Status | Implemented | Still required |
 |---|---|---|---|
-| 1. Football engine | Partial | Native side-view match, running, passing, catching, defensive pursuit, scoring, kicking, clock, halftime transition, sudden-death overtime periods, pause/resume, match statistics, automated period-transition tests | Explicit opening kickoff sequence, robust defensive formations and AI, penalties, full control and balance playtesting |
+| 1. Football engine | Partial | Native side-view match, home/away directional movement and scoring, downs and distance in both directions, passing, catching, defensive pursuit, touchdowns, conversions, field goals, punts, turnovers, safeties, simulated kickoffs, halftime, plays completing before period transition, sudden-death overtime, pause/resume, team-specific match and period statistics, automated engine tests | Playable kick trajectories and returns, robust defensive formations and AI, penalties, full control and balance playtesting |
 | 2. Territorial engine | Partial | 186 schematic territories, state ownership, normalized reciprocal adjacency graph, dangling/self-link cleanup for migrated saves, selectable map cells, pan/zoom, search/filter, challenge launch, adjacency and same-state guards, annexation, coach relocation, match and annexation history, adjacency unit tests | Accurate North American county geography and boundary-derived adjacency, municipality records, multi-challenge locks |
 | 3. Population and athletes | Partial | Procedural rosters, local prospects, attributes, recruitment, training | Attribute-driven match balance, aging, injuries, retirement, rare permanent death, lifecycle history |
 | 4. Coach and PFC career | Partial | Coach record, PFC employment, win compensation, facilities, treasury, one-time sponsorship offers, coach/PFC career display | NPC PFC operations, real contracts, expenses, hiring market, career opportunities, PFC creation and ownership progression |
@@ -31,21 +31,19 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 ## Latest engineering pass
 
-- Added an opening-kickoff screen with a simulated kickoff and first possession at the receiving team's own 25-yard line.
-- Corrected the field orientation: home attacks the right end zone, away attacks the left; formations, routes, runner controls, first downs, touchdowns, turnovers, punts, field-goal range, and kickoffs now respect that direction.
-- Added safety scoring when an offense carries the ball into its own end zone, plus fourth-down-only field goals and punts.
-- Added automated tests for directional movement/scoring, turnover field position, safety scoring, fourth-down restrictions, field goals, final-play scoring/conversions, halftime kickoff continuity, overtime, and all 186 territory graph links.
-- Added a distinct halftime state after the second quarter, with an explicit second-half continuation action and simulated second-half kickoff/possession switch.
-- Corrected quarter transitions so the clock cannot repeatedly advance periods after reaching zero.
-- Added safe per-period scoring allocation, including additional overtime periods.
-- Overtime now alternates possession between scoreless 90-second periods and ends immediately on a sudden-death touchdown or field goal.
-- Added automated tests for halftime, regulation completion, overtime entry/extension, overtime touchdown resolution, and county adjacency normalization.
-- Added shared county-adjacency validation and repair for saved campaigns. This removes dangling/self/duplicate links and repairs one-way links; it does not prove that the underlying schematic neighbor data matches real geography.
-- Added the automated test suite to the Pages workflow before the production build.
+- Added simulated opening and second-half kickoff flows, including halftime possession continuity.
+- Corrected home/away field orientation throughout formations, routes, runner controls, first-down calculations, scoring, turnovers, punts, and field-goal distance.
+- Added safety scoring and restricted field goals and punts to fourth down.
+- Ensured a live play finishes before an expired quarter advances; touchdown conversions are resolved before halftime or the final whistle.
+- Corrected overtime score indexing, possession alternation, and sudden-death touchdown/field-goal endings.
+- Added team-specific match statistics and per-period scores to campaign history.
+- Added shared county-adjacency validation and migration repair for dangling, duplicate, self, and one-way links. This repairs graph consistency but does not verify real-world borders.
+- Added automated tests for match periods, scoring, field direction, turnovers, safeties, fourth-down restrictions, field goals, and all 186 campaign territory links.
+- Added the test suite to the Pages workflow before production build and deployment.
 
 ## Remaining qualification
 
-Opening and second-half kickoffs are currently simulated transitions; there is no playable kick trajectory or return team yet. The match still needs deeper defensive formations, penalties, and live balance/playtesting. Defensive formations, penalties, balance, and real-world geography remain unfinished. Do not mark either Phase 1 or Phase 2 complete until their GDD acceptance criteria are exercised.
+Opening and second-half kickoffs are simulated; there is no playable kick trajectory or return team. Defensive formations, penalties, balance, and real-world geography remain unfinished. The map polygons are schematic Voronoi cells and must not be treated as official county boundaries. Do not mark Phase 1 or Phase 2 complete until their GDD acceptance criteria are exercised.
 
 ## Deployment
 
