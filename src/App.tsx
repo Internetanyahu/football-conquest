@@ -30,7 +30,7 @@ export default function App() {
     homeCounty: County;
     awayCounty: County;
   } | null>(null);
-  const [matchProvider, setMatchProvider] = useState<'RETRO_BOWL' | 'BUILT_IN'>('RETRO_BOWL');
+  const [matchProvider, setMatchProvider] = useState<'RETRO_BOWL' | 'BUILT_IN'>('BUILT_IN');
 
   // Victory / Defeat notification banner
   const [lastMatchNotice, setLastMatchNotice] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export default function App() {
       homeCounty: playerCurrentCounty,
       awayCounty: target,
     });
-    setMatchProvider('RETRO_BOWL');
+    setMatchProvider('BUILT_IN');
     setActiveTab('MATCH');
     setLastMatchNotice(null);
   };
@@ -150,6 +150,7 @@ export default function App() {
                   homeCounty={activeMatch.homeCounty}
                   awayCounty={activeMatch.awayCounty}
                   onMatchComplete={handleMatchComplete}
+                  onUseRetroBowl={() => setMatchProvider('RETRO_BOWL')}
                   onExitMatch={() => {
                     setActiveMatch(null);
                     setActiveTab('MAP');
