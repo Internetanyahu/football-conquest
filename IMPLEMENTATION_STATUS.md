@@ -31,6 +31,7 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 ## Latest engineering pass
 
+- Added an opening-kickoff screen with a simulated kickoff and first possession at the 25-yard line.
 - Added a distinct halftime state after the second quarter, with an explicit second-half continuation action and simulated second-half kickoff/possession switch.
 - Corrected quarter transitions so the clock cannot repeatedly advance periods after reaching zero.
 - Added safe per-period scoring allocation, including additional overtime periods.
@@ -41,7 +42,7 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 ## Remaining qualification
 
-The opening kickoff is still represented as an initial drive from the 25-yard line rather than a playable kickoff sequence. Defensive formations, penalties, balance, and real-world geography remain unfinished. Do not mark either Phase 1 or Phase 2 complete until their GDD acceptance criteria are exercised.
+Both opening and second-half kickoffs are currently simulated transitions; there is no playable kick trajectory or return team yet. Defensive formations, penalties, balance, and real-world geography remain unfinished. Do not mark either Phase 1 or Phase 2 complete until their GDD acceptance criteria are exercised.
 
 ## Deployment
 
