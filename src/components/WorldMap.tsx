@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { County, GameState } from '../types/game';
 import { getEligibleNeighborTargets } from '../systems/conquestSystem';
 import { Shield, Users, Trophy, MapPin, Swords, Search } from 'lucide-react';
@@ -30,28 +30,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const dragRef = useRef<{ x: number; y: number; startX: number; startY: number } | null>(null);
   const draggedRef = useRef(false);
   const suppressClickRef = useRef(false);
-  const [countyShapes, setCountyShapes] = useState<any[]>([]);
-  const [countyShapeCount, setCountyShapeCount] = useState(0);
-  const countyCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const countyHitAreas = useRef<Array<{ path: Path2D; countyId: string }>>([]);
-
   const selectedCounty = gameState.counties[selectedCountyId];
   const playerCoach = gameState.coaches[gameState.playerCoachId];
   const playerCurrentCounty = gameState.counties[playerCoach?.currentCountyId || 'C_BER'];
-
-  useEffect(() => {
-    let active = true;
-    fetch('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json')
-      .then((response) => {
-        if (!response.ok) throw new Error(`County map request failed: ${response.status}`);
-        return response.json();
-      })
-      .then((data) => {
-        if (active && Array.isArray(data.features)) setCountyShapes(data.features);
-      })
-      .catch((error) => console.warn('County detail map unavailable; using campaign map only.', error));
-    return () => { active = false; };
-  }, []);
 
   // Calculate eligible target counties from player's current coach location
   const eligibleTargets = useMemo(() => {
@@ -97,81 +78,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     });
   }, [gameState.counties]);
   
-  // Render thousands of real county boundaries into a low-resolution canvas.
-  // The nearest campaign territory supplies ownership color and click behavior.
-  useEffect(() => {
-    const canvas = countyCanvasRef.current;
-    if (!canvas || countyShapes.length === 0) return;
-    const width = 500;
-    const height = 330;
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    context.fillStyle = '#0c0a09';
-    context.fillRect(0, 0, width, height);
-    const campaignCounties = Object.values(gameState.counties);
-    const hitAreas: Array<{ path: Path2D; countyId: string }> = [];
-    const project = (point: number[]) => ({
-      x: ((point[0] + 126) / 60) * width,
-      y: ((50 - point[1]) / 27) * height,
-    });
-    for (const feature of countyShapes) {
-      const geometry = feature?.geometry;
-      if (!geometry) continue;
-      const polygons = geometry.type === 'Polygon'
-        ? [geometry.coordinates]
-        : geometry.type === 'MultiPolygon' ? geometry.coordinates : [];
-      if (!polygons.length) continue;
-      const path = new Path2D();
-      let sumX = 0;
-      let sumY = 0;
-      let pointCount = 0;
-      for (const polygon of polygons) {
-        for (const ring of polygon) {
-          if (!Array.isArray(ring) || ring.length < 3) continue;
-          ring.forEach((point: number[], index: number) => {
-            const projected = project(point);
-            if (index === 0) path.moveTo(projected.x, projected.y);
-            else path.lineTo(projected.x, projected.y);
-            sumX += projected.x;
-            sumY += projected.y;
-            pointCount++;
-          });
-          path.closePath();
-        }
-      }
-      if (!pointCount) continue;
-      const centerX = sumX / pointCount;
-      const centerY = sumY / pointCount;
-      if (centerX < 0 || centerX > width || centerY < 0 || centerY > height) continue;
-      let nearest = campaignCounties[0];
-      let nearestDistance = Number.POSITIVE_INFINITY;
-      for (const county of campaignCounties) {
-        const dx = county.x / 2 - centerX;
-        const dy = county.y / 2 - centerY;
-        const distance = dx * dx + dy * dy;
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearest = county;
-        }
-      }
-      const state = gameState.states[nearest.stateId];
-      context.fillStyle = nearest.id === selectedCountyId
-        ? '#b7791f'
-        : eligibleTargetIds.has(nearest.id)
-          ? '#28765c'
-          : (state?.color || nearest.homeColor);
-      context.fill(path, 'evenodd');
-      context.strokeStyle = '#0c0a09';
-      context.lineWidth = 0.65;
-      context.stroke(path);
-      hitAreas.push({ path, countyId: nearest.id });
-    }
-    countyHitAreas.current = hitAreas;
-    setCountyShapeCount(hitAreas.length);
-  }, [countyShapes, gameState.counties, gameState.states, selectedCountyId, eligibleTargetIds]);
-
   // Filtered counties for search
   const filteredCounties = useMemo(() => {
     return Object.values(gameState.counties).filter((c) => {
@@ -276,27 +182,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           }}
           onPointerCancel={() => { dragRef.current = null; }}
         >
-          <canvas
-            ref={countyCanvasRef}
-            aria-label="Pixelated United States county map"
-            onClick={(event) => {
-              const rect = event.currentTarget.getBoundingClientRect();
-              const x = ((event.clientX - rect.left) / rect.width) * 500;
-              const y = ((event.clientY - rect.top) / rect.height) * 330;
-              const context = event.currentTarget.getContext('2d');
-              if (!context) return;
-              for (let i = countyHitAreas.current.length - 1; i >= 0; i--) {
-                const area = countyHitAreas.current[i];
-                if (context.isPointInPath(area.path, x, y)) {
-                  const county = gameState.counties[area.countyId];
-                  if (county) handleCountyClick(county);
-                  break;
-                }
-              }
-            }}
-            className="absolute inset-0 w-full h-full"
-            style={{ imageRendering: 'pixelated', cursor: 'grab', transform: 'translate(' + (-mapPan.x / 2) + 'px, ' + (-mapPan.y / 2) + 'px) scale(' + mapZoom + ')', transformOrigin: 'center center' }}
-          />
           <svg
             viewBox={(500 - 500 / mapZoom + mapPan.x) + " " + (330 - 330 / mapZoom + mapPan.y) + " " + (1000 / mapZoom) + " " + (660 / mapZoom)}
             className="absolute inset-0 z-10 w-full h-full select-none pointer-events-none"
