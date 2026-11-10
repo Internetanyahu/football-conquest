@@ -145,6 +145,26 @@ test('away touchdown is scored at the left end zone', () => {
   assert.equal(engine.drive.quarterScores.away[0], 6);
 });
 
+test('a carrier taken into its own end zone concedes a safety', () => {
+  const engine = makeEngine();
+  engine.drive.possession = 'HOME';
+  engine.drive.lineOfScrimmage = 5;
+  engine.drive.firstDownLine = 15;
+  engine.drive.phase = 'PLAY_SELECT';
+  engine.selectPlay(runPlay);
+  engine.snapBall();
+  assert.ok(engine.ball.carrier);
+  engine.ball.carrier.x = 0.1;
+  engine.ball.carrier.vx = -10;
+
+  engine.update(0.1);
+
+  assert.equal(engine.drive.awayScore, 2);
+  assert.equal(engine.stats.away.safeties, 1);
+  assert.equal(engine.drive.possession, 'AWAY');
+  assert.equal(engine.drive.lineOfScrimmage, 25);
+});
+
 test('a turnover preserves the physical field position and reverses attacking direction', () => {
   const engine = makeEngine();
   engine.drive.possession = 'HOME';
