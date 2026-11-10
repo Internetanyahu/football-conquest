@@ -4,8 +4,6 @@ import { Landmark, ShieldAlert, Trophy } from 'lucide-react';
 
 interface PoliticsViewProps {
   gameState: GameState;
-  onUpdateState: (newState: GameState) => void;
-  onLaunchStateBowl: (opponentStateId: string) => void;
 }
 
 export const PoliticsView: React.FC<PoliticsViewProps> = ({ gameState }) => {
