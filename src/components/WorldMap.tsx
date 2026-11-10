@@ -88,6 +88,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       return matchesSearch && matchesState;
     });
   }, [gameState.counties, searchQuery, stateFilter]);
+  const filteredCountyIds = useMemo(() => new Set(filteredCounties.map((county) => county.id)), [filteredCounties]);
+  const filterIsActive = searchQuery.trim().length > 0 || stateFilter !== 'ALL';
 
   const handleCountyClick = (county: County) => {
     if (suppressClickRef.current) { suppressClickRef.current = false; return; }
@@ -211,7 +213,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                     key={cell.id}
                     points={cell.points}
                     fill={isSelected ? '#b7791f' : isEligible ? '#28765c' : (state?.color || county.homeColor)}
-                    fillOpacity={isSelected || isEligible ? 0.82 : 0.48}
+                    fillOpacity={filterIsActive ? (filteredCountyIds.has(county.id) ? 0.82 : 0.08) : (isSelected || isEligible ? 0.82 : 0.48)}
                     stroke={isSelected ? '#fbbf24' : '#292524'}
                     strokeWidth={isSelected ? 3 : 1.4}
                     className="cursor-pointer"
@@ -290,7 +292,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   />
 
                   {/* Labels appear only when useful, avoiding a wall of overlapping text. */}
-                  {(mapZoom >= 1.3 || isSelected || isCoachHere || isEligibleTarget) && <text
+                  {(mapZoom >= 1.7 || isSelected || isCoachHere || isEligibleTarget || (filterIsActive && filteredCountyIds.has(county.id))) && <text
                     y={16}
                     textAnchor="middle"
                     fill={isSelected ? '#f59e0b' : '#d6d3d1'}
@@ -312,6 +314,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             <button onClick={() => zoomMap(0.2)} className="w-7 h-7 rounded text-stone-200 hover:bg-stone-800" aria-label="Zoom in">+</button>
             <button onClick={() => { setMapZoom(1); setMapPan({ x: 0, y: 0 }); }} className="px-2 h-7 rounded text-[10px] text-stone-300 hover:bg-stone-800">Reset</button>
           </div>
+
+          <div className="absolute bottom-3 right-3 z-20 rounded bg-stone-950/80 border border-stone-800 px-2 py-1 text-[10px] text-stone-400 pointer-events-none">Drag to pan · + / − to zoom</div>
 
           {/* Map Legend */}
           <div className="absolute bottom-3 left-3 bg-stone-950/85 backdrop-blur-sm border border-stone-800 p-2.5 rounded text-[11px] text-stone-300 flex flex-col gap-1.5 pointer-events-none">
