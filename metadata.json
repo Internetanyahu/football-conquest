@@ -1,0 +1,6 @@
+{
+  "name": "Football Conquest",
+  "description": "An alternate-history American football and territorial conquest simulation game where winning football matches annexes neighboring counties.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
