@@ -25,6 +25,11 @@ function makeEngine() {
   );
 }
 
+function resolveExpiredPlay(engine: FootballEngine) {
+  const internals = engine as unknown as { advanceDown: (yards: number) => void };
+  internals.advanceDown(0);
+}
+
 test('opening kickoff is explicitly simulated before the first offensive drive', () => {
   const engine = makeEngine();
   assert.equal(engine.drive.phase, 'KICKOFF');
@@ -44,6 +49,9 @@ test('second quarter ends at halftime and the second half changes possession', (
   engine.drive.possession = 'HOME';
 
   engine.update(0.02);
+  assert.equal(engine.drive.phase, 'ACTIVE_PLAY');
+  assert.equal(engine.drive.gameClock, 0);
+  resolveExpiredPlay(engine);
 
   assert.equal(engine.drive.phase, 'HALFTIME');
   assert.equal(engine.drive.quarter, 3);
@@ -88,6 +96,7 @@ test('a tied regulation game enters overtime with a score slot and alternating p
   engine.drive.possession = 'HOME';
 
   engine.update(0.02);
+  resolveExpiredPlay(engine);
 
   assert.equal(engine.drive.phase, 'PLAY_SELECT');
   assert.equal(engine.drive.quarter, 5);
@@ -107,6 +116,7 @@ test('a scoreless overtime period extends cleanly and alternates possession', ()
   engine.drive.possession = 'AWAY';
 
   engine.update(0.02);
+  resolveExpiredPlay(engine);
 
   assert.equal(engine.drive.quarter, 6);
   assert.equal(engine.drive.phase, 'PLAY_SELECT');
@@ -249,6 +259,7 @@ test('a non-tied regulation result ends at the fourth-quarter horn', () => {
   engine.drive.awayScore = 7;
 
   engine.update(0.02);
+  resolveExpiredPlay(engine);
 
   assert.equal(engine.drive.phase, 'GAME_OVER');
   assert.equal(engine.drive.gameClock, 0);
