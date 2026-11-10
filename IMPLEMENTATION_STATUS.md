@@ -33,4 +33,4 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 The frontend is deployed through GitHub Actions to GitHub Pages. A successful Vite build confirms compilation and deployment only; it does not replace gameplay testing or prove that every GDD acceptance criterion is complete.
 
-Last verified deployment: commit `a5bf15fd87d3aa93485a83d9de886318c488575b` (2026-11-10).
+Deployment verification is recorded in the GitHub Actions history for `main`. Update this status only after the corresponding build-and-deploy run completes.
