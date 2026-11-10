@@ -84,6 +84,10 @@ test('a play that reaches the end zone at zero does not get cut off before the c
   engine.kickExtraPoint();
   assert.equal(engine.drive.phase, 'HALFTIME');
   assert.equal(engine.drive.quarter, 3);
+  assert.equal(engine.drive.possession, 'AWAY');
+  engine.startSecondHalf();
+  assert.equal(engine.drive.possession, 'AWAY');
+  assert.equal(engine.drive.lineOfScrimmage, 25);
 });
 
 test('a tied regulation game enters overtime with a score slot and alternating possession', () => {
