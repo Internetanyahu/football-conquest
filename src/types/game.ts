@@ -104,6 +104,7 @@ export interface PFC {
   };
   coachIds: string[];
   headquartersCountyId: string;
+  signedSponsorships?: string[];
 }
 
 export interface Coach {
