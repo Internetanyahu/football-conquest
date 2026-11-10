@@ -108,6 +108,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
   });
 
   const [matchEnded, setMatchEnded] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const weatherParticlesRef = useRef<{ x: number; y: number; speed: number; size: number }[]>([]);
 
   const callAudible = useCallback(() => {
@@ -206,6 +207,11 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
     if (eng && canvas) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        if (isPaused) {
+          drawField(ctx, canvas, eng);
+          animFrameRef.current = requestAnimationFrame(render);
+          return;
+        }
         // 1. Process User Steering Input
         let steerX = 0;
         let steerY = 0;
@@ -246,7 +252,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
     }
 
     animFrameRef.current = requestAnimationFrame(render);
-  }, [keys, matchEnded]);
+  }, [keys, matchEnded, isPaused]);
 
   useEffect(() => {
     animFrameRef.current = requestAnimationFrame(render);
@@ -692,6 +698,13 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
         </div>
 
         {/* Exit match early if needed */}
+        <button
+          onClick={() => setIsPaused((paused) => !paused)}
+          disabled={hudState.phase === 'GAME_OVER'}
+          className="text-stone-300 hover:text-white text-xs border border-stone-700 rounded px-2 py-1 disabled:opacity-40"
+        >
+          {isPaused ? 'Resume' : 'Pause'}
+        </button>
         {onExitMatch && (
           <button
             onClick={onExitMatch}
@@ -704,6 +717,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
 
       {/* 2. Interactive Game Canvas */}
       <div className="relative w-full max-w-5xl aspect-[16/9] bg-stone-900 border border-stone-800 overflow-hidden shadow-2xl">
+        {isPaused && <div className="absolute inset-0 z-40 bg-stone-950/65 flex items-center justify-center pointer-events-none"><span className="text-3xl font-black tracking-[0.25em] text-white">PAUSED</span></div>}
         <canvas
           ref={canvasRef}
           width={960}
