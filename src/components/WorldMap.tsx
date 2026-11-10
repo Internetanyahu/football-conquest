@@ -172,8 +172,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             <span className="ml-2 rounded border border-amber-600/40 bg-amber-950/40 px-2 py-1 text-[10px] font-mono font-bold text-amber-300">
               {Object.keys(gameState.counties).length} PLAYABLE TERRITORIES
             </span>
-            <h2 className="sr-only">North American Territorial Theatre
-            </h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
