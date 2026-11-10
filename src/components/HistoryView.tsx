@@ -209,11 +209,23 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateSta
 
           <div className="flex flex-col gap-2">
             <span className="text-[11px] font-mono text-stone-400 uppercase">
-              Permanent Memorial Roster (0 Fatalities Recorded)
+              Permanent Memorial Roster ({gameState.memorialHallOfFame.length} Honorees)
             </span>
-            <div className="bg-stone-950 border border-stone-800 p-4 rounded text-center text-xs text-stone-500 italic">
-              All active athletes across the 12 sovereign nations remain in good health.
-            </div>
+            {gameState.memorialHallOfFame.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {gameState.memorialHallOfFame.map((entry, index) => (
+                  <div key={entry.athlete.id + '-' + index} className="bg-stone-950 border border-stone-800 p-3 rounded text-xs">
+                    <div className="font-semibold text-stone-200">{entry.athlete.name}</div>
+                    <div className="mt-1 text-stone-400">{entry.tribute}</div>
+                    <div className="mt-1 text-[10px] text-stone-500">{entry.dateHonored}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-stone-950 border border-stone-800 p-4 rounded text-center text-xs text-stone-500">
+                No memorial records yet. Athlete aging, retirement, and mortality are future lifecycle systems.
+              </div>
+            )}
           </div>
         </div>
       </div>
