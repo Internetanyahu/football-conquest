@@ -7,6 +7,7 @@ import { County, GameState } from '../types/game';
 import { INITIAL_COUNTIES, INITIAL_PFCS, INITIAL_PLAYER_COACH, INITIAL_STATES } from '../data/worldMapData';
 import { generateAllCountyRosters, generateRosterForCounty } from '../data/rosterGenerator';
 import { expandCountyTerritories } from '../data/countyExpansion';
+import { areCountiesAdjacent, normalizeCountyAdjacency } from './territoryRules';
 
 const STORAGE_KEY = 'FOOTBALL_CONQUEST_SAVE_V1';
 
@@ -108,6 +109,7 @@ export function loadGameState(): GameState {
           }
           saveGameState(saved);
         }
+        if (normalizeCountyAdjacency(saved.counties)) saveGameState(saved);
         return saved;
       }
     }
@@ -189,7 +191,7 @@ export function executeAnnexation(
 
   if (!winnerCounty || !loserCounty) return gameState;
   const playerAssignmentValid = !playerCoach || playerCoach.currentCountyId === winnerCountyId;
-  const countiesAreAdjacent = winnerCounty.neighbors.includes(loserCountyId) || loserCounty.neighbors.includes(winnerCountyId);
+  const countiesAreAdjacent = areCountiesAdjacent(winnerCountyId, loserCountyId, newState.counties);
   if (!playerAssignmentValid || !countiesAreAdjacent || winnerCounty.stateId === loserCounty.stateId) return gameState;
 
   const previousLoserStateId = loserCounty.stateId;
@@ -280,7 +282,7 @@ export function executeDefeat(
   const playerCoach = newState.coaches[newState.playerCoachId];
   const home = newState.counties[homeCountyId];
   const away = newState.counties[awayCountyId];
-  if (!home || !away || (playerCoach && playerCoach.currentCountyId !== homeCountyId) || home.stateId === away.stateId || (!home.neighbors.includes(awayCountyId) && !away.neighbors.includes(homeCountyId))) return gameState;
+  if (!home || !away || (playerCoach && playerCoach.currentCountyId !== homeCountyId) || home.stateId === away.stateId || !areCountiesAdjacent(homeCountyId, awayCountyId, newState.counties)) return gameState;
 
   if (playerCoach) {
     playerCoach.losses++;
