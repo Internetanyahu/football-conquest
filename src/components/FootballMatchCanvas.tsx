@@ -22,6 +22,7 @@ interface FootballMatchCanvasProps {
     statsText: string;
   }) => void;
   onExitMatch?: () => void;
+  onUseRetroBowl?: () => void;
 }
 
 const PLAYBOOK: PlayCall[] = [
@@ -70,6 +71,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
   awayRoster,
   onMatchComplete,
   onExitMatch,
+  onUseRetroBowl,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<FootballEngine | null>(null);
@@ -864,8 +866,9 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
           <span><kbd className="px-1.5 py-0.5 bg-stone-800 text-stone-200 rounded font-mono">A / U</kbd> Audible</span>
         </div>
 
-        {/* Mobile touch action triggers */}
+        {/* Optional external game handoff */}
         <div className="flex items-center gap-2">
+          {onUseRetroBowl && <button onClick={onUseRetroBowl} className="px-3 py-1.5 rounded border border-stone-700 text-amber-300 hover:bg-stone-800">Open Retro Bowl</button>}
           {hudState.phase === 'PRE_SNAP' && (
             <>
               <button
