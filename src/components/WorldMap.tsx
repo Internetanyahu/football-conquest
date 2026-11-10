@@ -261,11 +261,11 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               }
             }}
             className="absolute inset-0 w-full h-full"
-            style={{ imageRendering: 'pixelated', cursor: 'crosshair' }}
+            style={{ imageRendering: 'pixelated', cursor: 'grab', transform: 'translate(' + (-mapPan.x / 2) + 'px, ' + (-mapPan.y / 2) + 'px) scale(' + mapZoom + ')', transformOrigin: 'center center' }}
           />
           <svg
             viewBox={(500 - 500 / mapZoom + mapPan.x) + " " + (330 - 330 / mapZoom + mapPan.y) + " " + (1000 / mapZoom) + " " + (660 / mapZoom)}
-            className="relative z-10 w-full h-full select-none pointer-events-none"
+            className="absolute inset-0 z-10 w-full h-full select-none pointer-events-none"
             style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }}
           >
             {/* Background Map Water & Continental Outline Tint */}
