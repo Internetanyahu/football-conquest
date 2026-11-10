@@ -130,6 +130,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ gameState, onUpdateSta
                 <div className="min-w-0">
                   <div className="font-semibold text-stone-100">{match.winnerCountyName} <span className="text-stone-500 font-normal">def.</span> {match.loserCountyName}</div>
                   <div className="mt-1 text-[10px] text-stone-500">{match.coachName} · {match.pfcName} · {match.date}</div>
+                  {match.statsText && <div className="mt-1 text-[10px] text-stone-400">{match.statsText}</div>}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-stone-200">{match.score}</span>
