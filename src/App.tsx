@@ -205,18 +205,11 @@ export default function App() {
         )}
 
         {activeTab === 'POLITICS' && (
-          <PoliticsView
-            gameState={gameState}
-            onUpdateState={setGameState}
-            onLaunchStateBowl={(targetCountyId) => startMatch(targetCountyId)}
-          />
+          <PoliticsView gameState={gameState} />
         )}
 
         {activeTab === 'ONLINE' && (
-          <OnlineLeagueView
-            gameState={gameState}
-            onChallengeOnlinePlayer={(targetCountyId) => startMatch(targetCountyId)}
-          />
+          <OnlineLeagueView gameState={gameState} />
         )}
 
         {activeTab === 'HISTORY' && (
