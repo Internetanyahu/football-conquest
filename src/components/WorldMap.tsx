@@ -62,6 +62,40 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   const eligibleTargetIds = useMemo(() => {
     return new Set(eligibleTargets.map((c) => c.id));
   }, [eligibleTargets]);
+
+  // Build a clipped Voronoi cell for every playable county. This gives every
+  // generated territory a visible, selectable area instead of a marker alone.
+  const territoryCells = useMemo(() => {
+    const counties = Object.values(gameState.counties);
+    return counties.map((site) => {
+      let polygon = [{ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1000, y: 660 }, { x: 0, y: 660 }];
+      for (const other of counties) {
+        if (other.id === site.id || polygon.length === 0) continue;
+        const nx = 2 * (other.x - site.x);
+        const ny = 2 * (other.y - site.y);
+        const limit = other.x * other.x + other.y * other.y - site.x * site.x - site.y * site.y;
+        const clipped: Array<{ x: number; y: number }> = [];
+        for (let i = 0; i < polygon.length; i++) {
+          const current = polygon[i];
+          const next = polygon[(i + 1) % polygon.length];
+          const currentDistance = nx * current.x + ny * current.y - limit;
+          const nextDistance = nx * next.x + ny * next.y - limit;
+          const currentInside = currentDistance <= 0;
+          const nextInside = nextDistance <= 0;
+          if (currentInside) clipped.push(current);
+          if (currentInside !== nextInside) {
+            const t = currentDistance / (currentDistance - nextDistance);
+            clipped.push({
+              x: current.x + (next.x - current.x) * t,
+              y: current.y + (next.y - current.y) * t,
+            });
+          }
+        }
+        polygon = clipped;
+      }
+      return { id: site.id, points: polygon.map((point) => point.x.toFixed(1) + ',' + point.y.toFixed(1)).join(' ') };
+    });
+  }, [gameState.counties]);
   
   // Render thousands of real county boundaries into a low-resolution canvas.
   // The nearest campaign territory supplies ownership color and click behavior.
@@ -276,6 +310,33 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               stroke="#292524"
               strokeWidth="1.5"
             />
+            <defs>
+              <clipPath id="territory-map-clip">
+                <path d="M 100 80 Q 250 60 500 70 Q 750 40 920 80 Q 940 300 880 500 Q 750 640 500 580 Q 280 550 120 450 Q 80 250 100 80 Z" />
+              </clipPath>
+            </defs>
+            <g clipPath="url(#territory-map-clip)">
+              {territoryCells.map((cell) => {
+                const county = gameState.counties[cell.id];
+                if (!county) return null;
+                const isSelected = county.id === selectedCountyId;
+                const isEligible = eligibleTargetIds.has(county.id);
+                const state = gameState.states[county.stateId];
+                return (
+                  <polygon
+                    key={cell.id}
+                    points={cell.points}
+                    fill={isSelected ? '#b7791f' : isEligible ? '#28765c' : (state?.color || county.homeColor)}
+                    fillOpacity={isSelected || isEligible ? 0.82 : 0.48}
+                    stroke={isSelected ? '#fbbf24' : '#292524'}
+                    strokeWidth={isSelected ? 3 : 1.4}
+                    className="cursor-pointer"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={() => handleCountyClick(county)}
+                  />
+                );
+              })}
+            </g>
 
             {/* Inter-County Adjacency Link Lines */}
             {Object.values(gameState.counties).map((county) =>
