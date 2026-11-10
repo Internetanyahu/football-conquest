@@ -618,7 +618,7 @@ export const FootballMatchCanvas: React.FC<FootballMatchCanvasProps> = ({
       awayScore: eng.drive.awayScore,
       winnerCountyId: winnerId,
       loserCountyId: loserId,
-      statsText: `Final: ${scoreStr}. Total Pass Yards: ${eng.stats.home.passYards + eng.stats.away.passYards}, Rush Yards: ${eng.stats.home.rushYards + eng.stats.away.rushYards}`,
+      statsText: `Home ${homeCounty.name}: ${eng.drive.homeScore} · Away ${awayCounty.name}: ${eng.drive.awayScore}. Pass yards: ${eng.stats.home.passYards + eng.stats.away.passYards}; rush yards: ${eng.stats.home.rushYards + eng.stats.away.rushYards}.`,
     });
   };
 
