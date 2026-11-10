@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { GameState, County } from './types/game';
 import { loadGameState, executeAnnexation, executeDefeat, getEligibleNeighborTargets } from './systems/conquestSystem';
 import { FootballMatchCanvas } from './components/FootballMatchCanvas';
+import { RetroBowlMatch } from './components/RetroBowlMatch';
 import { WorldMap } from './components/WorldMap';
 import { RosterView } from './components/RosterView';
 import { PfcCareer } from './components/PfcCareer';
@@ -29,6 +30,7 @@ export default function App() {
     homeCounty: County;
     awayCounty: County;
   } | null>(null);
+  const [matchProvider, setMatchProvider] = useState<'RETRO_BOWL' | 'BUILT_IN'>('RETRO_BOWL');
 
   // Victory / Defeat notification banner
   const [lastMatchNotice, setLastMatchNotice] = useState<string | null>(null);
@@ -60,6 +62,7 @@ export default function App() {
       homeCounty: playerCurrentCounty,
       awayCounty: target,
     });
+    setMatchProvider('RETRO_BOWL');
     setActiveTab('MATCH');
     setLastMatchNotice(null);
   };
@@ -142,17 +145,30 @@ export default function App() {
         {activeTab === 'MATCH' && (
           <div className="p-4 flex flex-col items-center">
             {activeMatch ? (
-              <FootballMatchCanvas
-                homeCounty={activeMatch.homeCounty}
-                awayCounty={activeMatch.awayCounty}
-                homeRoster={gameState.rosters[activeMatch.homeCounty.id] || []}
-                awayRoster={gameState.rosters[activeMatch.awayCounty.id] || []}
-                onMatchComplete={handleMatchComplete}
-                onExitMatch={() => {
-                  setActiveMatch(null);
-                  setActiveTab('MAP');
-                }}
-              />
+              matchProvider === 'RETRO_BOWL' ? (
+                <RetroBowlMatch
+                  homeCounty={activeMatch.homeCounty}
+                  awayCounty={activeMatch.awayCounty}
+                  onMatchComplete={handleMatchComplete}
+                  onExitMatch={() => {
+                    setActiveMatch(null);
+                    setActiveTab('MAP');
+                  }}
+                  onUseBuiltIn={() => setMatchProvider('BUILT_IN')}
+                />
+              ) : (
+                <FootballMatchCanvas
+                  homeCounty={activeMatch.homeCounty}
+                  awayCounty={activeMatch.awayCounty}
+                  homeRoster={gameState.rosters[activeMatch.homeCounty.id] || []}
+                  awayRoster={gameState.rosters[activeMatch.awayCounty.id] || []}
+                  onMatchComplete={handleMatchComplete}
+                  onExitMatch={() => {
+                    setActiveMatch(null);
+                    setActiveTab('MAP');
+                  }}
+                />
+              )
             ) : (
               <div className="w-full max-w-xl bg-stone-900 border border-stone-800 p-8 rounded-lg text-center flex flex-col items-center gap-4 my-12 shadow-2xl">
                 <Swords className="w-12 h-12 text-amber-500" />
