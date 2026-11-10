@@ -6,7 +6,7 @@ A browser-based alternate-history American football and territorial strategy gam
 
 ### County football
 - Original side-view pixel-art football engine; it is the default match mode.
-- Four short quarters, downs and distance, touchdowns, conversions, field goals, punts, turnovers, halftime, sudden-death overtime, and a final result.
+- Four short quarters, downs and distance, touchdowns, conversions, field goals, punts, turnovers, simulated opening and second-half kickoffs, halftime, sudden-death overtime, and a final result.
 - Running, passing, catching, ball-carrier control, juking, defensive pursuit, and weather effects.
 - Pause and resume.
 - Retro Bowl is an optional external handoff. It is not embedded as an owned game engine, and its score cannot be read or verified automatically. Scores entered from the external game are player-reported.
