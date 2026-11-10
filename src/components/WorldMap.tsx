@@ -167,7 +167,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({
             if ((event.target as HTMLElement).closest('button')) return;
             dragRef.current = { x: event.clientX, y: event.clientY, startX: mapPan.x, startY: mapPan.y };
             draggedRef.current = false;
-            event.currentTarget.setPointerCapture(event.pointerId);
           }}
           onPointerMove={(event) => {
             if (!dragRef.current) return;
