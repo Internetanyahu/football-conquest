@@ -74,9 +74,15 @@ export function loadGameState(): GameState {
         // history while adding the newly playable watershed districts.
         if (missingIds.length > 0) {
           const parentIdFor = (id: string) => id.replace(/^C_/, 'C_').replace(/_(RIDGE|RIVER)$/, '');
+          const adjustedParentPopulations = new Set<string>();
           for (const id of missingIds) {
             const template = expandedTemplate[id];
-            const parent = saved.counties[parentIdFor(id)];
+            const parentId = parentIdFor(id);
+            const parent = saved.counties[parentId];
+            if (parent && !adjustedParentPopulations.has(parentId)) {
+              parent.population = Math.round(parent.population * 0.45);
+              adjustedParentPopulations.add(parentId);
+            }
             const county = {
               ...template,
               stateId: parent?.stateId || template.stateId,
