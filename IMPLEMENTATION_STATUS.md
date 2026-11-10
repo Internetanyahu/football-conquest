@@ -31,7 +31,10 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 ## Latest engineering pass
 
-- Added an opening-kickoff screen with a simulated kickoff and first possession at the 25-yard line.
+- Added an opening-kickoff screen with a simulated kickoff and first possession at the receiving team's own 25-yard line.
+- Corrected the field orientation: home attacks the right end zone, away attacks the left; formations, routes, runner controls, first downs, touchdowns, turnovers, punts, field-goal range, and kickoffs now respect that direction.
+- Added safety scoring when an offense carries the ball into its own end zone, plus fourth-down-only field goals and punts.
+- Added automated tests for directional movement/scoring, turnover field position, safety scoring, fourth-down restrictions, field goals, halftime, overtime, and adjacency integrity.
 - Added a distinct halftime state after the second quarter, with an explicit second-half continuation action and simulated second-half kickoff/possession switch.
 - Corrected quarter transitions so the clock cannot repeatedly advance periods after reaching zero.
 - Added safe per-period scoring allocation, including additional overtime periods.
@@ -42,7 +45,7 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 
 ## Remaining qualification
 
-Both opening and second-half kickoffs are currently simulated transitions; there is no playable kick trajectory or return team yet. Defensive formations, penalties, balance, and real-world geography remain unfinished. Do not mark either Phase 1 or Phase 2 complete until their GDD acceptance criteria are exercised.
+Opening and second-half kickoffs are currently simulated transitions; there is no playable kick trajectory or return team yet. The match still needs deeper defensive formations, penalties, and live balance/playtesting. Defensive formations, penalties, balance, and real-world geography remain unfinished. Do not mark either Phase 1 or Phase 2 complete until their GDD acceptance criteria are exercised.
 
 ## Deployment
 
