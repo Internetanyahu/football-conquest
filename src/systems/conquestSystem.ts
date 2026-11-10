@@ -5,13 +5,15 @@
 
 import { County, GameState } from '../types/game';
 import { INITIAL_COUNTIES, INITIAL_PFCS, INITIAL_PLAYER_COACH, INITIAL_STATES } from '../data/worldMapData';
-import { generateAllCountyRosters } from '../data/rosterGenerator';
+import { generateAllCountyRosters, generateRosterForCounty } from '../data/rosterGenerator';
+import { expandCountyTerritories } from '../data/countyExpansion';
 
 const STORAGE_KEY = 'FOOTBALL_CONQUEST_SAVE_V1';
 
 export function createInitialGameState(): GameState {
-  const counties = { ...INITIAL_COUNTIES };
-  const states = { ...INITIAL_STATES };
+  const counties = expandCountyTerritories(INITIAL_COUNTIES);
+  const states = Object.fromEntries(Object.entries(INITIAL_STATES).map(([id, state]) => [id, { ...state, totalCountiesOwned: 0 }]));
+  for (const county of Object.values(counties)) states[county.stateId].totalCountiesOwned++;
   const pfcs = { ...INITIAL_PFCS };
   const coach = { ...INITIAL_PLAYER_COACH };
   const rosters = generateAllCountyRosters(counties);
@@ -64,7 +66,41 @@ export function loadGameState(): GameState {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.version === 1) {
-        return parsed as GameState;
+        const saved = parsed as GameState;
+        const expandedTemplate = expandCountyTerritories(INITIAL_COUNTIES);
+        const missingIds = Object.keys(expandedTemplate).filter((id) => !saved.counties[id]);
+
+        // Upgrade existing saves in place: preserve conquered ownership and
+        // history while adding the newly playable watershed districts.
+        if (missingIds.length > 0) {
+          const parentIdFor = (id: string) => id.replace(/^C_/, 'C_').replace(/_(RIDGE|RIVER)$/, '');
+          for (const id of missingIds) {
+            const template = expandedTemplate[id];
+            const parent = saved.counties[parentIdFor(id)];
+            const county = {
+              ...template,
+              stateId: parent?.stateId || template.stateId,
+              stateName: parent?.stateName || template.stateName,
+              neighbors: [...template.neighbors],
+            };
+            saved.counties[id] = county;
+            saved.rosters[id] = generateRosterForCounty(county);
+          }
+          // Restore reciprocal adjacency against the saved, currently-owned map.
+          for (const county of Object.values(saved.counties)) {
+            county.neighbors = [...new Set(county.neighbors.filter((id) => !!saved.counties[id]))];
+            for (const neighborId of county.neighbors) {
+              const neighbor = saved.counties[neighborId];
+              if (neighbor && !neighbor.neighbors.includes(county.id)) neighbor.neighbors.push(county.id);
+            }
+          }
+          for (const state of Object.values(saved.states)) state.totalCountiesOwned = 0;
+          for (const county of Object.values(saved.counties)) {
+            if (saved.states[county.stateId]) saved.states[county.stateId].totalCountiesOwned++;
+          }
+          saveGameState(saved);
+        }
+        return saved;
       }
     }
   } catch (err) {
