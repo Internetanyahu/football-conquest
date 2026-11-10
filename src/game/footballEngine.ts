@@ -112,8 +112,8 @@ export class FootballEngine {
       playClock: 25,
       down: 1,
       distance: 10,
-      lineOfScrimmage: 25,
-      firstDownLine: 35,
+      lineOfScrimmage: 75,
+      firstDownLine: 85,
       offenseCountyId: homeCountyId,
       homeScore: 0,
       awayScore: 0,
@@ -127,7 +127,7 @@ export class FootballEngine {
     };
 
     this.ball = {
-      x: 25,
+      x: 75,
       y: 26.6,
       z: 0,
       vx: 0,
@@ -180,47 +180,48 @@ export class FootballEngine {
     this.players = [];
     const los = this.drive.lineOfScrimmage;
     const isHomeOffense = this.drive.possession === 'HOME';
+    const direction = isHomeOffense ? 1 : -1;
     const offRoster = isHomeOffense ? this.homeRoster : this.awayRoster;
     const defRoster = isHomeOffense ? this.awayRoster : this.homeRoster;
     const offColors = isHomeOffense ? this.homeColors : this.awayColors;
     const defColors = isHomeOffense ? this.awayColors : this.homeColors;
 
-    // Offensive Line & Backfield (playing Left to Right, advancing toward X = 100)
+    // Home advances toward the right end zone; away advances toward the left end zone.
     const isWedge = this.drive.currentPlay?.isHistoricFlyingWedge;
 
     // Center / Lineman
-    this.addPlayer(offRoster, 'OL', los - 0.5, 26.6, true, offColors, 'PRE_SNAP');
+    this.addPlayer(offRoster, 'OL', los - direction * 0.5, 26.6, true, offColors, 'PRE_SNAP');
     // Guard / Tackle
-    this.addPlayer(offRoster, 'TE', los - 0.5, 22.0, true, offColors, 'PRE_SNAP');
+    this.addPlayer(offRoster, 'TE', los - direction * 0.5, 22.0, true, offColors, 'PRE_SNAP');
     
     // Quarterback
-    this.addPlayer(offRoster, 'QB', los - 4.0, 26.6, true, offColors, 'PRE_SNAP');
+    this.addPlayer(offRoster, 'QB', los - direction * 4.0, 26.6, true, offColors, 'PRE_SNAP');
     
     // Running Back
-    const rbX = isWedge ? los - 2.5 : los - 7.0;
+    const rbX = isWedge ? los - direction * 2.5 : los - direction * 7.0;
     const rbY = 26.6;
     this.addPlayer(offRoster, 'RB', rbX, rbY, true, offColors, 'PRE_SNAP');
 
     // Wide Receivers
     if (isWedge) {
       // In the historic Flying Wedge, receivers pack tight into the wedge to block ahead of the runner!
-      this.addPlayer(offRoster, 'WR1', los - 2.0, 24.5, true, offColors, 'PRE_SNAP');
-      this.addPlayer(offRoster, 'WR2', los - 2.0, 28.7, true, offColors, 'PRE_SNAP');
+      this.addPlayer(offRoster, 'WR1', los - direction * 2.0, 24.5, true, offColors, 'PRE_SNAP');
+      this.addPlayer(offRoster, 'WR2', los - direction * 2.0, 28.7, true, offColors, 'PRE_SNAP');
     } else {
-      this.addPlayer(offRoster, 'WR1', los - 1.0, 10.0, true, offColors, 'PRE_SNAP');
-      this.addPlayer(offRoster, 'WR2', los - 1.0, 43.3, true, offColors, 'PRE_SNAP');
+      this.addPlayer(offRoster, 'WR1', los - direction * 1.0, 10.0, true, offColors, 'PRE_SNAP');
+      this.addPlayer(offRoster, 'WR2', los - direction * 1.0, 43.3, true, offColors, 'PRE_SNAP');
     }
 
     // Defensive Team (positioned across line of scrimmage, defending X = 100)
     // Defensive Lineman
-    this.addPlayer(defRoster, 'DL', los + 1.2, 26.6, false, defColors, 'PRE_SNAP');
+    this.addPlayer(defRoster, 'DL', los + direction * 1.2, 26.6, false, defColors, 'PRE_SNAP');
     // Linebacker
-    this.addPlayer(defRoster, 'LB', los + 4.5, 26.6, false, defColors, 'PRE_SNAP');
+    this.addPlayer(defRoster, 'LB', los + direction * 4.5, 26.6, false, defColors, 'PRE_SNAP');
     // Cornerbacks
-    this.addPlayer(defRoster, 'CB', los + 5.0, 11.0, false, defColors, 'PRE_SNAP');
-    this.addPlayer(defRoster, 'CB', los + 5.0, 42.0, false, defColors, 'PRE_SNAP');
+    this.addPlayer(defRoster, 'CB', los + direction * 5.0, 11.0, false, defColors, 'PRE_SNAP');
+    this.addPlayer(defRoster, 'CB', los + direction * 5.0, 42.0, false, defColors, 'PRE_SNAP');
     // Free Safety
-    this.addPlayer(defRoster, 'S', los + 14.0, 26.6, false, defColors, 'PRE_SNAP');
+    this.addPlayer(defRoster, 'S', los + direction * 14.0, 26.6, false, defColors, 'PRE_SNAP');
 
     // Reset ball position
     this.ball.x = los;
@@ -302,7 +303,8 @@ export class FootballEngine {
   public steerCarrier(dirX: number, dirY: number) {
     if (!this.ball.carrier) return;
     const speedYds = (this.ball.carrier.speed / 100) * 8.5; // Max speed yards per sec
-    this.ball.carrier.vx = dirX * speedYds;
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    this.ball.carrier.vx = dirX * speedYds * direction;
     this.ball.carrier.vy = dirY * speedYds;
   }
 
@@ -310,7 +312,7 @@ export class FootballEngine {
   public performJuke() {
     if (!this.ball.carrier || this.jukeCooldown > 0) return;
     this.jukeCooldown = 1.0; // 1 second cooldown
-    this.ball.carrier.vx += 5.5; // Quick burst forward
+    this.ball.carrier.vx += 5.5 * (this.drive.possession === 'HOME' ? 1 : -1); // Quick burst forward
     soundEngine.playCatch();
   }
 
@@ -380,7 +382,8 @@ export class FootballEngine {
         this.ball.z = 1.0;
 
         // Check for Touchdown! (Reaching endzone at X >= 100)
-        if (p.x >= 100) {
+        const direction = this.drive.possession === 'HOME' ? 1 : -1;
+        if ((direction > 0 && p.x >= 100) || (direction < 0 && p.x <= 0)) {
           this.scoreTouchdown();
           return;
         }
@@ -445,20 +448,20 @@ export class FootballEngine {
       if (p === this.ball.carrier) {
         // AI or default forward push if no user steering
         if (p.vx === 0 && p.vy === 0) {
-          p.x += (p.speed / 100) * 6.5 * dt;
+          p.x += (this.drive.possession === 'HOME' ? 1 : -1) * (p.speed / 100) * 6.5 * dt;
         } else {
           p.x += p.vx * dt;
           p.y += p.vy * dt;
         }
       } else if (p.position === 'WR1') {
         // Deep streak or post route
-        p.x += (p.speed / 100) * 7.5 * dt;
+        p.x += (this.drive.possession === 'HOME' ? 1 : -1) * (p.speed / 100) * 7.5 * dt;
         if (p.x > this.drive.lineOfScrimmage + 10) {
           p.y += 1.8 * dt; // cut inward
         }
       } else if (p.position === 'WR2') {
         // Quick slant or corner route
-        p.x += (p.speed / 100) * 7.0 * dt;
+        p.x += (this.drive.possession === 'HOME' ? 1 : -1) * (p.speed / 100) * 7.0 * dt;
         if (p.x > this.drive.lineOfScrimmage + 6) {
           p.y -= 2.2 * dt;
         }
@@ -466,15 +469,15 @@ export class FootballEngine {
         // Blockers pushing forward and engaging rushers
         if (isWedge) {
           // Flying Wedge blockers advance as a tight wall ahead of runner!
-          p.x += 4.5 * dt;
+          p.x += (this.drive.possession === 'HOME' ? 1 : -1) * 4.5 * dt;
           const targetY = 26.6 + (p.position === 'TE' ? -1.5 : 1.5);
           p.y += (targetY - p.y) * 2 * dt;
         } else {
-          p.x += 1.0 * dt;
+          p.x += (this.drive.possession === 'HOME' ? 1 : -1) * 1.0 * dt;
         }
       } else if (p.position === 'QB' && this.ball.carrier !== p) {
         // Dropback or handoff follow-through
-        p.x -= 0.5 * dt;
+        p.x -= (this.drive.possession === 'HOME' ? 1 : -1) * 0.5 * dt;
       }
     } else {
       // DEFENSE BEHAVIOR
@@ -500,7 +503,7 @@ export class FootballEngine {
           p.x += (dx / Math.max(1, dist)) * cbSpeed * dt;
           p.y += (dy / Math.max(1, dist)) * cbSpeed * dt;
         } else {
-          p.x += 2.0 * dt; // backpedal
+          p.x -= (this.drive.possession === 'HOME' ? 1 : -1) * 2.0 * dt; // backpedal
         }
       } else if (p.position === 'S') {
         // Deep safety pursuit
@@ -517,7 +520,8 @@ export class FootballEngine {
     receiver.state = 'CARRYING';
     soundEngine.playCatch();
 
-    const yardsGained = Math.round(receiver.x - this.drive.lineOfScrimmage);
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    const yardsGained = Math.round((receiver.x - this.drive.lineOfScrimmage) * direction);
     const statTeam = this.drive.possession === 'HOME' ? this.stats.home : this.stats.away;
     statTeam.completions++;
     statTeam.passYards += Math.max(0, yardsGained);
@@ -578,7 +582,8 @@ export class FootballEngine {
     soundEngine.playWhistle();
 
     const endYard = Math.round(carrier.x);
-    const gained = endYard - this.drive.lineOfScrimmage;
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    const gained = Math.round((endYard - this.drive.lineOfScrimmage) * direction);
 
     const statTeam = this.drive.possession === 'HOME' ? this.stats.home : this.stats.away;
     if (this.drive.currentPlay?.type === 'RUN') {
@@ -591,19 +596,23 @@ export class FootballEngine {
 
   private advanceDown(gained: number) {
     this.drive.phase = 'PLAY_SELECT';
-    const newLOS = Math.max(1, Math.min(99, this.drive.lineOfScrimmage + gained));
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    const newLOS = Math.max(0, Math.min(100, this.drive.lineOfScrimmage + gained * direction));
     this.drive.lineOfScrimmage = newLOS;
+    const reachedFirstDown = direction > 0
+      ? newLOS >= this.drive.firstDownLine
+      : newLOS <= this.drive.firstDownLine;
 
-    if (newLOS >= this.drive.firstDownLine) {
+    if (reachedFirstDown) {
       // First Down!
       soundEngine.playFirstDown();
       this.drive.down = 1;
       this.drive.distance = 10;
-      this.drive.firstDownLine = Math.min(100, newLOS + 10);
+      this.drive.firstDownLine = direction > 0 ? Math.min(100, newLOS + 10) : Math.max(0, newLOS - 10);
       this.drive.playResultText = `FIRST DOWN! Ball on the ${newLOS} yard line.`;
     } else {
       this.drive.down++;
-      this.drive.distance -= gained;
+      this.drive.distance = Math.max(1, Math.ceil(Math.abs(this.drive.firstDownLine - newLOS)));
       if (this.drive.down > 4) {
         // Turnover on Downs
         soundEngine.playTurnover();
@@ -661,7 +670,7 @@ export class FootballEngine {
       this.drive.playResultText = 'Extra point kick is NO GOOD wide right!';
     }
 
-    this.switchPossession(25);
+    this.switchPossessionForKickoff();
   }
 
   public attemptFieldGoal() {
@@ -675,7 +684,8 @@ export class FootballEngine {
     soundEngine.playKick();
 
     // Distance difficulty: 50 is center, line of scrimmage distance
-    const dist = 100 - this.drive.lineOfScrimmage + 17; // +17 for endzone and snap
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    const dist = (direction > 0 ? 100 - this.drive.lineOfScrimmage : this.drive.lineOfScrimmage) + 17; // +17 for endzone and snap
     const accuracy = Math.abs(this.drive.kickMeterValue - 50);
 
     const isGood = accuracy < 22 && dist < 58;
@@ -693,29 +703,44 @@ export class FootballEngine {
       this.drive.playResultText = `Field Goal from ${dist} yards is NO GOOD!`;
     }
 
-    this.switchPossession(25);
+    if (isGood) this.switchPossessionForKickoff();
+    else this.switchPossession(this.drive.lineOfScrimmage);
   }
 
   public puntBall() {
     soundEngine.playKick();
     const puntDist = Math.round(38 + Math.random() * 15);
-    const newLOS = Math.max(20, 100 - (this.drive.lineOfScrimmage + puntDist));
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    const newLOS = Math.max(10, Math.min(90, this.drive.lineOfScrimmage + direction * puntDist));
     this.drive.playResultText = `Punt traveled ${puntDist} yards downfield!`;
     this.switchPossession(newLOS);
   }
 
   private resolveTurnover(turnoverYard: number) {
-    const oppLOS = Math.max(10, Math.min(90, 100 - turnoverYard));
-    this.switchPossession(oppLOS);
+    const turnoverSpot = Math.max(1, Math.min(99, turnoverYard));
+    this.switchPossession(turnoverSpot);
   }
 
   private switchPossession(newLOS: number) {
     this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
     this.drive.lineOfScrimmage = newLOS;
-    this.drive.firstDownLine = Math.min(100, newLOS + 10);
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    this.drive.firstDownLine = direction > 0 ? Math.min(100, newLOS + 10) : Math.max(0, newLOS - 10);
     this.drive.down = 1;
     this.drive.distance = 10;
     this.drive.phase = 'PLAY_SELECT';
+    this.setupFormation();
+  }
+
+  private switchPossessionForKickoff() {
+    this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
+    this.drive.lineOfScrimmage = this.drive.possession === 'HOME' ? 75 : 25;
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    this.drive.firstDownLine = this.drive.lineOfScrimmage + direction * 10;
+    this.drive.down = 1;
+    this.drive.distance = 10;
+    this.drive.phase = 'PLAY_SELECT';
+    this.drive.playResultText = `Kickoff simulated. ${this.drive.possession} receives at its own 25-yard line.`;
     this.setupFormation();
   }
 
@@ -732,16 +757,20 @@ export class FootballEngine {
 
   public startOpeningDrive() {
     if (this.drive.phase !== 'KICKOFF') return;
+    this.drive.lineOfScrimmage = this.drive.possession === 'HOME' ? 75 : 25;
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    this.drive.firstDownLine = this.drive.lineOfScrimmage + direction * 10;
     this.drive.phase = 'PLAY_SELECT';
-    this.drive.playResultText = 'Opening kickoff simulated. HOME receives at its 25-yard line.';
+    this.drive.playResultText = 'Opening kickoff simulated. HOME receives at its own 25-yard line.';
     this.setupFormation();
   }
 
   public startSecondHalf() {
     if (this.drive.phase !== 'HALFTIME') return;
     this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
-    this.drive.lineOfScrimmage = 25;
-    this.drive.firstDownLine = 35;
+    this.drive.lineOfScrimmage = this.drive.possession === 'HOME' ? 75 : 25;
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    this.drive.firstDownLine = this.drive.lineOfScrimmage + direction * 10;
     this.drive.down = 1;
     this.drive.distance = 10;
     this.drive.phase = 'PLAY_SELECT';
@@ -781,8 +810,9 @@ export class FootballEngine {
     while (this.drive.quarterScores.home.length <= periodIndex) this.drive.quarterScores.home.push(0);
     while (this.drive.quarterScores.away.length <= periodIndex) this.drive.quarterScores.away.push(0);
     this.drive.possession = this.drive.possession === 'HOME' ? 'AWAY' : 'HOME';
-    this.drive.lineOfScrimmage = 25;
-    this.drive.firstDownLine = 35;
+    this.drive.lineOfScrimmage = this.drive.possession === 'HOME' ? 75 : 25;
+    const direction = this.drive.possession === 'HOME' ? 1 : -1;
+    this.drive.firstDownLine = this.drive.lineOfScrimmage + direction * 10;
     this.drive.down = 1;
     this.drive.distance = 10;
     this.drive.phase = 'PLAY_SELECT';
