@@ -34,7 +34,7 @@ This file tracks implementation against `GDD.md`. A visible screen is not proof 
 - Added an opening-kickoff screen with a simulated kickoff and first possession at the receiving team's own 25-yard line.
 - Corrected the field orientation: home attacks the right end zone, away attacks the left; formations, routes, runner controls, first downs, touchdowns, turnovers, punts, field-goal range, and kickoffs now respect that direction.
 - Added safety scoring when an offense carries the ball into its own end zone, plus fourth-down-only field goals and punts.
-- Added automated tests for directional movement/scoring, turnover field position, safety scoring, fourth-down restrictions, field goals, halftime, overtime, and adjacency integrity.
+- Added automated tests for directional movement/scoring, turnover field position, safety scoring, fourth-down restrictions, field goals, final-play scoring/conversions, halftime kickoff continuity, overtime, and all 186 territory graph links.
 - Added a distinct halftime state after the second quarter, with an explicit second-half continuation action and simulated second-half kickoff/possession switch.
 - Corrected quarter transitions so the clock cannot repeatedly advance periods after reaching zero.
 - Added safe per-period scoring allocation, including additional overtime periods.
