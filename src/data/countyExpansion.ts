@@ -55,7 +55,7 @@ export function expandCountyTerritories(
     const originalPopulation = parent.population;
     parent.population = Math.round(originalPopulation * 0.45);
     features.forEach((feature, index) => {
-      const distance = 13;
+      const distance = 28;
       const x = Math.max(18, Math.min(982, parent.x + Math.cos(feature.angle) * distance));
       const y = Math.max(18, Math.min(642, parent.y + Math.sin(feature.angle) * distance));
       const county: County = {
